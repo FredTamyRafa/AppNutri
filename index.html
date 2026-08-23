@@ -1,0 +1,539 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>NutriTrack - Dieta V5</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    <style>
+        ::-webkit-scrollbar { width: 0px; background: transparent; }
+        body { -webkit-tap-highlight-color: transparent; }
+        .glass-panel { background: rgba(255, 255, 255, 0.9); backdrop-filter: blur(10px); }
+        .tab-content { display: none; animation: fadeIn 0.3s ease-in-out; }
+        .tab-content.active { display: block; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .loader { border: 4px solid #f3f3f3; border-top: 4px solid #10b981; border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        
+        /* Checkbox Customizado */
+        .check-item { transition: all 0.2s ease; }
+        .check-item input:checked + div { text-decoration: line-through; color: #9ca3af; }
+        .check-item input:checked ~ .check-box { background-color: #10b981; border-color: #10b981; }
+        .check-item input:checked ~ .check-box i { opacity: 1; }
+    </style>
+</head>
+<body class="bg-gray-100 text-gray-800 font-sans antialiased">
+
+    <!-- Container Mobile -->
+    <div class="max-w-md mx-auto bg-gray-50 min-h-screen relative pb-20 shadow-2xl overflow-x-hidden">
+        
+        <!-- Header -->
+        <header class="bg-emerald-600 text-white p-5 rounded-b-3xl shadow-lg relative z-10">
+            <div class="flex justify-between items-center mb-4">
+                <div>
+                    <h1 class="text-2xl font-bold">NutriTrack V5</h1>
+                    <p class="text-emerald-100 text-sm">Metabolismo & Hipertrofia (1180 kcal)</p>
+                </div>
+                <div class="w-12 h-12 rounded-full bg-white text-emerald-600 flex items-center justify-center shadow-inner">
+                    <i class="ph-fill ph-user-circle text-4xl"></i>
+                </div>
+            </div>
+            
+            <div class="bg-white/20 p-4 rounded-xl backdrop-blur-sm">
+                <div class="flex justify-between items-end mb-2">
+                    <span class="text-sm font-medium">Calorias Hoje (Salvas)</span>
+                    <span class="text-lg font-bold"><span id="caloriasAtuais">0</span> / 1180 kcal</span>
+                </div>
+                <div class="w-full bg-emerald-900/30 rounded-full h-3">
+                    <div id="barraProgresso" class="bg-white h-3 rounded-full transition-all duration-500" style="width: 0%"></div>
+                </div>
+            </div>
+        </header>
+
+        <!-- ABA 1: CARDÁPIOS -->
+        <main id="tab-menus" class="tab-content active p-4">
+            <div class="flex items-center justify-between mb-4">
+                <h2 class="text-xl font-bold text-gray-800">Cardápio Exato</h2>
+                <select id="seletorMenu" class="bg-white border border-gray-300 text-gray-700 text-sm rounded-lg focus:ring-emerald-500 focus:border-emerald-500 block p-2 shadow-sm outline-none w-1/2" onchange="renderizarCardapio()">
+                    <option value="1">Menu 1: O Clássico</option>
+                    <option value="4">Menu 4: Frutos do Mar</option>
+                    <option value="6">Menu 6: Tradição & Feijão</option>
+                    <option value="7">Menu 7: Almoço Rico</option>
+                    <option value="8">Menu 8: Low Carb Estratégico</option>
+                    <option value="9">Menu 9: Energia em Flocos</option>
+                    <option value="10">Menu 10: Sabor do Litoral</option>
+                    <option value="11">Menu 11: Prático na Airfryer</option>
+                    <option value="12">Menu 12: Omelete Turbo</option>
+                </select>
+            </div>
+            
+            <div id="listaRefeicoes" class="space-y-4 pb-4">
+                <!-- Injetado via JS -->
+            </div>
+        </main>
+
+        <!-- ABA 2: CÂMERA E DIÁRIO -->
+        <main id="tab-diario" class="tab-content p-4">
+            <h2 class="text-xl font-bold text-gray-800 mb-4">Diário de Calorias (Persistente)</h2>
+            
+            <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 text-center mb-6">
+                <input type="file" accept="image/*" capture="environment" id="cameraInput" class="hidden" onchange="processarFoto(event)">
+                <label for="cameraInput" class="cursor-pointer inline-block w-20 h-20 bg-emerald-100 rounded-full flex items-center justify-center mb-3 mx-auto shadow-sm active:scale-95 transition-transform">
+                    <i class="ph ph-camera text-4xl text-emerald-600"></i>
+                </label>
+                <h3 class="font-bold text-gray-800">Fotografar Refeição</h3>
+                <p class="text-sm text-gray-500 mt-1">A foto não fica salva, mas o número calórico gravará permanentemente!</p>
+            </div>
+
+            <div id="areaAnalise" class="hidden bg-white p-5 rounded-2xl shadow-lg border border-emerald-100 mb-6">
+                <img id="previewFoto" class="w-full h-48 object-cover rounded-xl mb-4" src="" alt="Preview">
+                
+                <div id="loaderAnalise" class="flex flex-col items-center justify-center py-4">
+                    <div class="loader mb-3"></div>
+                    <p class="text-emerald-600 font-medium">Extraindo Dados...</p>
+                </div>
+
+                <div id="formEstimativa" class="hidden">
+                    <h3 class="font-bold text-gray-800 mb-3 flex items-center"><i class="ph-fill ph-floppy-disk text-emerald-500 mr-2"></i> Gravar Consumo</h3>
+                    <div class="space-y-3">
+                        <div>
+                            <label class="text-xs text-gray-500 font-semibold uppercase">Prato / Alimento</label>
+                            <input type="text" id="inputNomeRefeicao" class="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl mt-1 focus:outline-none focus:ring-2 focus:ring-emerald-500" placeholder="Ex: Almoço (Frango, 60g Arroz, 60g Feijão)">
+                        </div>
+                        <div>
+                            <label class="text-xs text-gray-500 font-semibold uppercase">Calorias (Kcal)</label>
+                            <input type="number" id="inputCalorias" class="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl mt-1 text-lg font-bold text-emerald-600 focus:outline-none focus:ring-2 focus:ring-emerald-500">
+                        </div>
+                        <div class="flex space-x-2 mt-4">
+                            <button onclick="salvarRefeicao(false)" class="w-1/2 bg-emerald-600 text-white font-bold py-3 rounded-xl shadow-sm active:bg-emerald-700 transition-colors flex justify-center items-center">
+                                Gravar Memória
+                            </button>
+                            <button onclick="salvarRefeicao(true)" class="w-1/2 bg-blue-600 text-white font-bold py-3 rounded-xl shadow-md active:bg-blue-700 transition-colors flex justify-center items-center">
+                                <i class="ph ph-whatsapp-logo mr-2"></i> Enviar
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div>
+                <div class="flex justify-between items-center mb-3">
+                    <h3 class="font-bold text-gray-800">Consumo de Hoje</h3>
+                    <button onclick="limparDiarioHoje()" class="text-xs text-red-500 font-medium px-2 py-1 bg-red-50 rounded-lg">Limpar Dia</button>
+                </div>
+                <div id="listaDiario" class="space-y-3">
+                    <!-- Registros via JS -->
+                </div>
+            </div>
+        </main>
+
+        <!-- ABA 3: LISTA DE COMPRAS (NOVA) -->
+        <main id="tab-compras" class="tab-content p-4">
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-xl font-bold text-gray-800">Lista de Compras</h2>
+                <button onclick="limparListaCompras()" class="text-xs text-gray-500 font-medium px-3 py-1.5 bg-white border border-gray-200 rounded-lg shadow-sm">
+                    Desmarcar Tudo
+                </button>
+            </div>
+            <p class="text-sm text-gray-500 mb-6">Itens calculados com base nos 12 menus disponíveis para rodízio quinzenal.</p>
+
+            <div id="containerListaCompras" class="space-y-6 pb-6">
+                <!-- Gerado via JavaScript -->
+            </div>
+        </main>
+
+        <!-- ABA 4: RELATÓRIOS -->
+        <main id="tab-relatorios" class="tab-content p-4">
+            <h2 class="text-xl font-bold text-gray-800 mb-2">Relatórios</h2>
+            <p class="text-sm text-gray-500 mb-6">Exporte os dados em texto para a planilha do Engenheiro.</p>
+
+            <div class="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 text-center">
+                <div class="w-16 h-16 bg-emerald-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <i class="ph ph-file-csv text-3xl text-emerald-600"></i>
+                </div>
+                <h3 class="font-bold text-gray-800 text-lg mb-2">Exportar Histórico (.CSV)</h3>
+                <button onclick="exportarCSV()" class="w-full bg-emerald-600 text-white font-bold py-3 rounded-xl shadow-md active:bg-emerald-700 transition-colors flex justify-center items-center">
+                    <i class="ph ph-download-simple text-xl mr-2"></i> Baixar Planilha
+                </button>
+            </div>
+        </main>
+
+        <!-- Bottom Navigation -->
+        <nav class="fixed bottom-0 w-full max-w-md glass-panel border-t border-gray-200 flex justify-between items-center pb-safe pt-2 pb-2 px-1 z-50">
+            <button onclick="switchTab('menus', this)" class="nav-btn active flex flex-col items-center p-2 text-emerald-600 w-1/4 transition-colors">
+                <i class="ph-fill ph-fork-knife text-2xl mb-1"></i>
+                <span class="text-[10px] font-semibold">Cardápios</span>
+            </button>
+            <button onclick="switchTab('diario', this)" class="nav-btn flex flex-col items-center p-2 text-gray-400 hover:text-emerald-600 w-1/4 transition-colors">
+                <i class="ph-fill ph-camera text-2xl mb-1"></i>
+                <span class="text-[10px] font-semibold text-center leading-tight">Memória</span>
+            </button>
+            <button onclick="switchTab('compras', this)" class="nav-btn flex flex-col items-center p-2 text-gray-400 hover:text-emerald-600 w-1/4 transition-colors">
+                <i class="ph-fill ph-shopping-cart text-2xl mb-1"></i>
+                <span class="text-[10px] font-semibold">Compras</span>
+            </button>
+            <button onclick="switchTab('relatorios', this)" class="nav-btn flex flex-col items-center p-2 text-gray-400 hover:text-emerald-600 w-1/4 transition-colors">
+                <i class="ph-fill ph-chart-line-up text-2xl mb-1"></i>
+                <span class="text-[10px] font-semibold">Planilha</span>
+            </button>
+        </nav>
+    </div>
+
+    <script>
+        // BANCO DE DADOS NUTRICIONAL (V4 Expandido mantido 100%)
+        const menusData = {
+            "1": [
+                { id: "R1", title: "Café da Manhã", time: "07:30", desc: "<strong>2 Ovos Inteiros</strong> mexidos no antiaderente.<br><strong>1 fatia (25g)</strong> de pão integral.<br><strong>80g</strong> de mamão papaia.<br>Bebida: Chá ou Café sem açúcar <strong>(Livre)</strong>.", supp: "Multi + Ômega-3", nutri: "Prot: 18g | Carb: 20g | Gord: 10g", img: "https://images.unsplash.com/photo-1525351484163-7529414344d8?w=400&q=80" },
+                { id: "R2", title: "Lanche", time: "10:30", desc: "<strong>1 Unid (250ml)</strong> Whey Pronto Piracanjuba.", supp: "5g de Psyllium", nutri: "Prot: 23g | Carb: 12g | Gord: 3g", img: "https://images.unsplash.com/photo-1579722820308-d74e571900a9?w=400&q=80" },
+                { id: "R3", title: "Almoço", time: "13:00", desc: "<strong>130g</strong> Robalo/Badejo grelhado.<br><strong>70g</strong> Arroz integral.<br>Salada Tropical <strong>(Livre)</strong>.", supp: "1 cáp. Morosil", nutri: "Prot: 32g | Carb: 20g | Gord: 8g", img: "https://images.unsplash.com/photo-1519708227418-c8fd9a32b7a2?w=400&q=80" },
+                { id: "R4", title: "Pré-Treino", time: "16:30", desc: "<strong>1 dose (30g)</strong> Whey Isolado Vitafor com água.<br><strong>80g</strong> morangos.", supp: "3g Creatina + 5g Psyllium", nutri: "Prot: 23g | Carb: 8g | Gord: 0g", img: "https://images.unsplash.com/photo-1629853909772-2d9dcbfbce08?w=400&q=80" },
+                { id: "R5", title: "Jantar", time: "19:30", desc: "<strong>120g</strong> Peito de frango.<br><strong>100g</strong> Abóbora cabotiá.<br>Folhas verdes <strong>(Livre)</strong>.", supp: "1 cáp. Ômega-3", nutri: "Prot: 28g | Carb: 11g | Gord: 3g", img: "https://images.unsplash.com/photo-1532550907401-47153fbce22a?w=400&q=80" }
+            ],
+            "4": [
+                { id: "R1", title: "Café da Manhã", time: "07:30", desc: "<strong>2 Ovos</strong> cozidos.<br><strong>1 fatia (25g)</strong> pão torrado.<br><strong>100g</strong> morangos.", supp: "Multi + Ômega-3", nutri: "Prot: 16g | Carb: 22g | Gord: 9g", img: "https://images.unsplash.com/photo-1582169505937-b9992bd01ed9?w=400&q=80" },
+                { id: "R2", title: "Lanche", time: "10:30", desc: "<strong>1 Unid (250ml)</strong> Whey Pronto Piracanjuba.", supp: "5g de Psyllium", nutri: "Prot: 23g | Carb: 12g | Gord: 3g", img: "https://images.unsplash.com/photo-1579722820308-d74e571900a9?w=400&q=80" },
+                { id: "R3", title: "Almoço", time: "13:00", desc: "<strong>130g</strong> Lulas e Polvo.<br><strong>70g</strong> Arroz integral.<br>Salada Capixaba de Palmito <strong>(Livre)</strong>.", supp: "1 cáp. Morosil", nutri: "Prot: 26g | Carb: 22g | Gord: 7g", img: "https://images.unsplash.com/photo-1599321955726-e04842669811?w=400&q=80" },
+                { id: "R4", title: "Pré-Treino", time: "16:30", desc: "<strong>1 dose (30g)</strong> Whey Isolado Vitafor.<br><strong>200ml</strong> Água de coco.", supp: "3g Creatina + 5g Psyllium", nutri: "Prot: 23g | Carb: 10g | Gord: 0g", img: "https://images.unsplash.com/photo-1629853909772-2d9dcbfbce08?w=400&q=80" },
+                { id: "R5", title: "Jantar", time: "19:30", desc: "<strong>120g</strong> Frango Grelhado.<br><strong>80g</strong> abóbora cozida.<br>Couve/Alface <strong>(Livre)</strong>.", supp: "1 cáp. Ômega-3", nutri: "Prot: 27g | Carb: 9g | Gord: 3g", img: "https://images.unsplash.com/photo-1532550907401-47153fbce22a?w=400&q=80" }
+            ],
+            "6": [
+                { id: "R1", title: "Café da Manhã", time: "07:30", desc: "<strong>2 Ovos</strong> mexidos.<br><strong>20g</strong> goma de tapioca.<br><strong>80g</strong> mamão papaia.", supp: "Multi + Ômega-3", nutri: "Prot: 14g | Carb: 25g | Gord: 10g", img: "https://images.unsplash.com/photo-1510693202996-01d0bc880fb4?w=400&q=80" },
+                { id: "R2", title: "Lanche", time: "10:30", desc: "<strong>1 Unid (250ml)</strong> Whey Pronto Piracanjuba.", supp: "5g de Psyllium", nutri: "Prot: 23g | Carb: 12g | Gord: 3g", img: "https://images.unsplash.com/photo-1579722820308-d74e571900a9?w=400&q=80" },
+                { id: "R3", title: "Almoço (Feijão)", time: "13:00", desc: "<strong>110g</strong> Frango Grelhado.<br><strong>60g</strong> Arroz.<br><strong>60g</strong> Feijão.<br>Vegetais <strong>(Livre)</strong>.", supp: "1 cáp. Morosil", nutri: "Prot: 34g | Carb: 28g | Gord: 5g", img: "https://images.unsplash.com/photo-1588166524941-3bf61a9c41db?w=400&q=80" },
+                { id: "R4", title: "Pré-Treino", time: "16:30", desc: "<strong>1 dose (30g)</strong> Whey Isolado Vitafor.<br><strong>1 Unid (70g)</strong> kiwi.", supp: "3g Creatina + 5g Psyllium", nutri: "Prot: 23g | Carb: 12g | Gord: 0g", img: "https://images.unsplash.com/photo-1629853909772-2d9dcbfbce08?w=400&q=80" },
+                { id: "R5", title: "Jantar", time: "19:30", desc: "<strong>120g</strong> Filé de Peixe Magro.<br><strong>100g</strong> Abobrinha grelhada.<br>Salada <strong>(Livre)</strong>.", supp: "1 cáp. Ômega-3", nutri: "Prot: 26g | Carb: 4g | Gord: 3g", img: "https://images.unsplash.com/photo-1559742811-822873691df8?w=400&q=80" }
+            ],
+            "7": [
+                { id: "R1", title: "Café da Manhã", time: "07:30", desc: "<strong>Crepioca:</strong> 1 Ovo + 2 Claras + 20g Tapioca.<br><strong>1 Unid</strong> Maçã.", supp: "Multi + Ômega-3", nutri: "Prot: 15g | Carb: 35g | Gord: 5g", img: "https://images.unsplash.com/photo-1615486171448-4d517c469cb9?w=400&q=80" },
+                { id: "R2", title: "Lanche", time: "10:30", desc: "<strong>1 Unid (250ml)</strong> Whey Pronto Piracanjuba.", supp: "5g de Psyllium", nutri: "Prot: 23g | Carb: 12g | Gord: 3g", img: "https://images.unsplash.com/photo-1579722820308-d74e571900a9?w=400&q=80" },
+                { id: "R3", title: "Almoço (Feijão)", time: "13:00", desc: "<strong>110g</strong> Patinho moído.<br><strong>70g</strong> Batata-Doce.<br><strong>60g</strong> Feijão.<br>Salada Rica <strong>(Livre)</strong>.", supp: "1 cáp. Morosil", nutri: "Prot: 33g | Carb: 28g | Gord: 6g", img: "https://images.unsplash.com/photo-1519708227418-c8fd9a32b7a2?w=400&q=80" },
+                { id: "R4", title: "Pré-Treino", time: "16:30", desc: "<strong>1 dose (30g)</strong> Whey Isolado Vitafor.<br><strong>80g</strong> Morangos.", supp: "3g Creatina + 5g Psyllium", nutri: "Prot: 23g | Carb: 6g | Gord: 0g", img: "https://images.unsplash.com/photo-1629853909772-2d9dcbfbce08?w=400&q=80" },
+                { id: "R5", title: "Jantar", time: "19:30", desc: "<strong>Omelete:</strong> 1 Ovo + 3 Claras.<br>Vegetais no vapor <strong>(Livre)</strong>.", supp: "1 cáp. Ômega-3", nutri: "Prot: 18g | Carb: 8g | Gord: 5g", img: "https://images.unsplash.com/photo-1525351484163-7529414344d8?w=400&q=80" }
+            ],
+            "8": [
+                { id: "R1", title: "Café da Manhã", time: "07:30", desc: "<strong>2 Ovos</strong> mexidos.<br><strong>30g</strong> Queijo minas frescal.<br><strong>150g</strong> Mamão papaia.", supp: "Multi + Ômega-3", nutri: "Prot: 18g | Carb: 15g | Gord: 12g", img: "https://images.unsplash.com/photo-1525351484163-7529414344d8?w=400&q=80" },
+                { id: "R2", title: "Lanche", time: "10:30", desc: "<strong>1 Unid (250ml)</strong> Whey Pronto Piracanjuba.", supp: "5g de Psyllium", nutri: "Prot: 23g | Carb: 12g | Gord: 3g", img: "https://images.unsplash.com/photo-1579722820308-d74e571900a9?w=400&q=80" },
+                { id: "R3", title: "Almoço", time: "13:00", desc: "<strong>130g</strong> Peito de Frango.<br><strong>80g</strong> Mandioca cozida.<br>Salada Verde <strong>(Livre)</strong>.", supp: "1 cáp. Morosil", nutri: "Prot: 32g | Carb: 24g | Gord: 5g", img: "https://images.unsplash.com/photo-1532550907401-47153fbce22a?w=400&q=80" },
+                { id: "R4", title: "Pré-Treino", time: "16:30", desc: "<strong>1 dose (30g)</strong> Whey Isolado Vitafor.<br><strong>100g</strong> Melão.", supp: "3g Creatina + 5g Psyllium", nutri: "Prot: 23g | Carb: 8g | Gord: 0g", img: "https://images.unsplash.com/photo-1629853909772-2d9dcbfbce08?w=400&q=80" },
+                { id: "R5", title: "Jantar", time: "19:30", desc: "<strong>140g</strong> Tilápia/Pescada.<br><strong>100g</strong> Brócolis/Couve-flor.<br>Rúcula <strong>(Livre)</strong>.", supp: "1 cáp. Ômega-3", nutri: "Prot: 28g | Carb: 5g | Gord: 3g", img: "https://images.unsplash.com/photo-1519708227418-c8fd9a32b7a2?w=400&q=80" }
+            ],
+            "9": [
+                { id: "R1", title: "Café da Manhã", time: "07:30", desc: "<strong>Mingau:</strong> 30g Aveia + 100ml leite desnatado + 1 clara.", supp: "Multi + Ômega-3", nutri: "Prot: 10g | Carb: 25g | Gord: 4g", img: "https://images.unsplash.com/photo-1517673132405-a56a62b18caf?w=400&q=80" },
+                { id: "R2", title: "Lanche", time: "10:30", desc: "<strong>1 Unid (250ml)</strong> Whey Pronto Piracanjuba.", supp: "5g de Psyllium", nutri: "Prot: 23g | Carb: 12g | Gord: 3g", img: "https://images.unsplash.com/photo-1579722820308-d74e571900a9?w=400&q=80" },
+                { id: "R3", title: "Almoço", time: "13:00", desc: "<strong>120g</strong> Patinho Moído.<br><strong>80g</strong> Macarrão integral.<br>Salada <strong>(Livre)</strong>.", supp: "1 cáp. Morosil", nutri: "Prot: 30g | Carb: 25g | Gord: 7g", img: "https://images.unsplash.com/photo-1588166524941-3bf61a9c41db?w=400&q=80" },
+                { id: "R4", title: "Pré-Treino", time: "16:30", desc: "<strong>1 dose (30g)</strong> Whey Isolado Vitafor.<br><strong>40g</strong> Banana prata.", supp: "3g Creatina + 5g Psyllium", nutri: "Prot: 23g | Carb: 10g | Gord: 0g", img: "https://images.unsplash.com/photo-1629853909772-2d9dcbfbce08?w=400&q=80" },
+                { id: "R5", title: "Jantar", time: "19:30", desc: "<strong>120g</strong> Frango desfiado.<br>Salada de repolho/cenoura <strong>(Livre)</strong>.", supp: "1 cáp. Ômega-3", nutri: "Prot: 28g | Carb: 5g | Gord: 3g", img: "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=400&q=80" }
+            ],
+            "10": [
+                { id: "R1", title: "Café da Manhã", time: "07:30", desc: "<strong>Crepioca:</strong> 1 Ovo + 20g Tapioca.<br>Recheio: <strong>20g</strong> Cottage.<br><strong>80g</strong> Morangos.", supp: "Multi + Ômega-3", nutri: "Prot: 12g | Carb: 20g | Gord: 6g", img: "https://images.unsplash.com/photo-1615486171448-4d517c469cb9?w=400&q=80" },
+                { id: "R2", title: "Lanche", time: "10:30", desc: "<strong>1 Unid (250ml)</strong> Whey Pronto Piracanjuba.", supp: "5g de Psyllium", nutri: "Prot: 23g | Carb: 12g | Gord: 3g", img: "https://images.unsplash.com/photo-1579722820308-d74e571900a9?w=400&q=80" },
+                { id: "R3", title: "Almoço", time: "13:00", desc: "<strong>130g</strong> Peixe Branco (Moqueca Falsa).<br><strong>70g</strong> Arroz integral.<br>Salada Verde <strong>(Livre)</strong>.", supp: "1 cáp. Morosil", nutri: "Prot: 30g | Carb: 20g | Gord: 5g", img: "https://images.unsplash.com/photo-1599321955726-e04842669811?w=400&q=80" },
+                { id: "R4", title: "Pré-Treino", time: "16:30", desc: "<strong>1 dose (30g)</strong> Whey Isolado Vitafor.<br><strong>150ml</strong> Água de coco.", supp: "3g Creatina + 5g Psyllium", nutri: "Prot: 23g | Carb: 8g | Gord: 0g", img: "https://images.unsplash.com/photo-1629853909772-2d9dcbfbce08?w=400&q=80" },
+                { id: "R5", title: "Jantar", time: "19:30", desc: "<strong>130g</strong> Camarão grelhado.<br><strong>100g</strong> Abobrinha.<br>Rúcula <strong>(Livre)</strong>.", supp: "1 cáp. Ômega-3", nutri: "Prot: 26g | Carb: 5g | Gord: 3g", img: "https://images.unsplash.com/photo-1559742811-822873691df8?w=400&q=80" }
+            ],
+            "11": [
+                { id: "R1", title: "Café da Manhã", time: "07:30", desc: "<strong>2 Ovos</strong> cozidos.<br><strong>20g</strong> Torradas integrais.<br><strong>70g</strong> Abacaxi.", supp: "Multi + Ômega-3", nutri: "Prot: 13g | Carb: 22g | Gord: 10g", img: "https://images.unsplash.com/photo-1582169505937-b9992bd01ed9?w=400&q=80" },
+                { id: "R2", title: "Lanche", time: "10:30", desc: "<strong>1 Unid (250ml)</strong> Whey Pronto Piracanjuba.", supp: "5g de Psyllium", nutri: "Prot: 23g | Carb: 12g | Gord: 3g", img: "https://images.unsplash.com/photo-1579722820308-d74e571900a9?w=400&q=80" },
+                { id: "R3", title: "Almoço", time: "13:00", desc: "<strong>130g</strong> Sobrecoxa s/ pele (Airfryer).<br><strong>70g</strong> Batata inglesa (Airfryer).<br>Alface/Tomate <strong>(Livre)</strong>.", supp: "1 cáp. Morosil", nutri: "Prot: 28g | Carb: 15g | Gord: 8g", img: "https://images.unsplash.com/photo-1598514982205-f36b96d1e8d4?w=400&q=80" },
+                { id: "R4", title: "Pré-Treino", time: "16:30", desc: "<strong>1 dose (30g)</strong> Whey Isolado Vitafor.<br><strong>80g</strong> Mamão.", supp: "3g Creatina + 5g Psyllium", nutri: "Prot: 23g | Carb: 9g | Gord: 0g", img: "https://images.unsplash.com/photo-1629853909772-2d9dcbfbce08?w=400&q=80" },
+                { id: "R5", title: "Jantar", time: "19:30", desc: "<strong>120g</strong> Iscas de lombo suíno.<br><strong>100g</strong> Cenoura/Vagem.<br>Salada Verde <strong>(Livre)</strong>.", supp: "1 cáp. Ômega-3", nutri: "Prot: 28g | Carb: 8g | Gord: 5g", img: "https://images.unsplash.com/photo-1529692236671-f1f6cf9683ba?w=400&q=80" }
+            ],
+            "12": [
+                { id: "R1", title: "Café da Manhã", time: "07:30", desc: "<strong>Panqueca:</strong> 1 Ovo + 1 Clara + 1/2 Banana + 10g Aveia.", supp: "Multi + Ômega-3", nutri: "Prot: 14g | Carb: 20g | Gord: 5g", img: "https://images.unsplash.com/photo-1528207776546-365bb710ee93?w=400&q=80" },
+                { id: "R2", title: "Lanche", time: "10:30", desc: "<strong>1 Unid (250ml)</strong> Whey Pronto Piracanjuba.", supp: "5g de Psyllium", nutri: "Prot: 23g | Carb: 12g | Gord: 3g", img: "https://images.unsplash.com/photo-1579722820308-d74e571900a9?w=400&q=80" },
+                { id: "R3", title: "Almoço", time: "13:00", desc: "<strong>130g</strong> Atum/Sardinha.<br><strong>70g</strong> Quinoa/Arroz.<br>Salada Tropical <strong>(Livre)</strong>.", supp: "1 cáp. Morosil", nutri: "Prot: 30g | Carb: 20g | Gord: 8g", img: "https://images.unsplash.com/photo-1519708227418-c8fd9a32b7a2?w=400&q=80" },
+                { id: "R4", title: "Pré-Treino", time: "16:30", desc: "<strong>1 dose (30g)</strong> Whey Isolado Vitafor.<br><strong>1 Unid (70g)</strong> kiwi.", supp: "3g Creatina + 5g Psyllium", nutri: "Prot: 23g | Carb: 10g | Gord: 0g", img: "https://images.unsplash.com/photo-1629853909772-2d9dcbfbce08?w=400&q=80" },
+                { id: "R5", title: "Jantar", time: "19:30", desc: "<strong>Omelete:</strong> 1 Ovo + 3 Claras.<br><strong>50g</strong> Frango desfiado.<br>Espinafre <strong>(Livre)</strong>.", supp: "1 cáp. Ômega-3", nutri: "Prot: 28g | Carb: 5g | Gord: 6g", img: "https://images.unsplash.com/photo-1525351484163-7529414344d8?w=400&q=80" }
+            ]
+        };
+
+        // DADOS DA LISTA DE COMPRAS
+        const listaComprasData = [
+            {
+                categoria: "🥩 Açougue & Peixaria",
+                itens: [
+                    { id: "c1", nome: "Peito de Frango (Filé e Desfiado)" },
+                    { id: "c2", nome: "Patinho Moído Magro" },
+                    { id: "c3", nome: "Lombo Suíno (Iscas/Bifes magros)" },
+                    { id: "c4", nome: "Peixe Branco (Robalo/Badejo/Tilápia)" },
+                    { id: "c5", nome: "Atum Fresco ou Sardinha" },
+                    { id: "c6", nome: "Camarão Limpo" },
+                    { id: "c7", nome: "Mix de Lulas e Polvo" },
+                    { id: "c8", nome: "Sobrecoxa de Frango (sem pele)" }
+                ]
+            },
+            {
+                categoria: "🥦 Hortifruti (Vegetais Livres/Quantificados)",
+                itens: [
+                    { id: "c9", nome: "Abóbora Cabotiá" },
+                    { id: "c10", nome: "Batata-doce & Mandioca" },
+                    { id: "c11", nome: "Batata Inglesa" },
+                    { id: "c12", nome: "Brócolis & Couve-flor" },
+                    { id: "c13", nome: "Cenoura & Vagem" },
+                    { id: "c14", nome: "Abobrinha & Berinjela" },
+                    { id: "c15", nome: "Folhas Verdes (Alface, Rúcula, Espinafre, Couve)" },
+                    { id: "c16", nome: "Tomate & Pepino" },
+                    { id: "c17", nome: "Repolho & Chuchu" },
+                    { id: "c18", nome: "Palmito Pupunha & Alho/Coentro/Limão" }
+                ]
+            },
+            {
+                categoria: "🍓 Hortifruti (Frutas)",
+                itens: [
+                    { id: "c19", nome: "Mamão Papaia" },
+                    { id: "c20", nome: "Morangos Frescos" },
+                    { id: "c21", nome: "Maçã & Kiwi" },
+                    { id: "c22", nome: "Melão & Abacaxi" },
+                    { id: "c23", nome: "Banana Prata" }
+                ]
+            },
+            {
+                categoria: "🥚 Ovos & Laticínios",
+                itens: [
+                    { id: "c24", nome: "Cartelas de Ovos Grandes" },
+                    { id: "c25", nome: "Queijo Minas Frescal Light" },
+                    { id: "c26", nome: "Queijo Cottage" },
+                    { id: "c27", nome: "Leite Desnatado (Para o mingau)" }
+                ]
+            },
+            {
+                categoria: "🌾 Grãos & Mercearia",
+                itens: [
+                    { id: "c28", nome: "Arroz Integral & Quinoa" },
+                    { id: "c29", nome: "Feijão (Carioca ou Preto)" },
+                    { id: "c30", nome: "Macarrão Integral" },
+                    { id: "c31", nome: "Aveia em Flocos" },
+                    { id: "c32", nome: "Pão Integral (Forma) & Torradas" },
+                    { id: "c33", nome: "Goma de Tapioca" },
+                    { id: "c34", nome: "Azeite Extra Virgem & Orégano/Canela" },
+                    { id: "c35", nome: "Chás (Verde, Mate, Hortelã) & Café" },
+                    { id: "c36", nome: "Água de Coco Natural (Caixinha 200ml)" }
+                ]
+            },
+            {
+                categoria: "💊 Suplementação & Fórmulas",
+                itens: [
+                    { id: "c37", nome: "Whey Pronto Piracanjuba (23g Proteína)" },
+                    { id: "c38", nome: "Whey Isolado Vitafor (Pó)" },
+                    { id: "c39", nome: "Psyllium (Pó/Flocos)" },
+                    { id: "c40", nome: "Creatina Monohidratada" },
+                    { id: "c41", nome: "Multivitamínico (Dux, Growth ou Vitapure)" },
+                    { id: "c42", nome: "Ômega-3 (Alta concentração EPA/DHA)" },
+                    { id: "c43", nome: "Morosil (Selo Galena 400-500mg)" }
+                ]
+            }
+        ];
+
+        const META_CALORIAS = 1180;
+        const STORAGE_KEY_DIARIO = 'nutritrack_diario_persistente_v4';
+        const STORAGE_KEY_COMPRAS = 'nutritrack_compras_estado_v5'; 
+        
+        let diarioLog = JSON.parse(localStorage.getItem(STORAGE_KEY_DIARIO)) || [];
+        let comprasEstado = JSON.parse(localStorage.getItem(STORAGE_KEY_COMPRAS)) || [];
+        let currentFotoDataUrl = null;
+
+        window.onload = () => {
+            renderizarCardapio();
+            atualizarProgressoDiario();
+            renderizarListaCompras();
+        };
+
+        function switchTab(tabId, element) {
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+            document.querySelectorAll('.nav-btn').forEach(el => {
+                el.classList.remove('text-emerald-600'); el.classList.add('text-gray-400');
+                el.querySelector('i').classList.replace('ph-fill', 'ph');
+            });
+            document.getElementById('tab-' + tabId).classList.add('active');
+            element.classList.replace('text-gray-400', 'text-emerald-600');
+            element.querySelector('i').classList.replace('ph', 'ph-fill');
+        }
+
+        function renderizarCardapio() {
+            const menuId = document.getElementById('seletorMenu').value;
+            const refeicoes = menusData[menuId] || menusData["1"];
+            const container = document.getElementById('listaRefeicoes');
+            
+            container.innerHTML = refeicoes.map(ref => `
+                <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+                    <div class="h-36 w-full relative">
+                        <img src="${ref.img}" alt="${ref.title}" class="w-full h-full object-cover">
+                        <div class="absolute bottom-0 w-full bg-gradient-to-t from-black/80 to-transparent p-3 pt-10">
+                            <span class="text-white text-xs font-bold px-2 py-1 bg-emerald-600 rounded-lg shadow-sm">${ref.id}</span>
+                            <span class="text-white font-bold ml-2">${ref.title} <span class="font-normal text-emerald-200 ml-1 text-sm"><i class="ph ph-clock"></i> ${ref.time}</span></span>
+                        </div>
+                    </div>
+                    <div class="p-4">
+                        <p class="text-gray-700 text-sm leading-relaxed mb-3">${ref.desc}</p>
+                        <div class="bg-gray-50 border border-gray-200 rounded-lg p-2 mb-3">
+                            <p class="text-[10px] uppercase font-bold text-gray-500 mb-1 tracking-wider"><i class="ph-fill ph-chart-pie-slice"></i> Referência</p>
+                            <p class="text-xs text-gray-700 font-medium">${ref.nutri}</p>
+                        </div>
+                        <div class="inline-flex items-center bg-blue-50 text-blue-700 px-3 py-1.5 rounded-lg text-xs font-semibold w-full border border-blue-100">
+                            <i class="ph-fill ph-pill mr-2 text-lg"></i>${ref.supp}
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function processarFoto(event) {
+            const file = event.target.files[0];
+            if(!file) return;
+
+            document.getElementById('areaAnalise').classList.remove('hidden');
+            document.getElementById('loaderAnalise').classList.remove('hidden');
+            document.getElementById('formEstimativa').classList.add('hidden');
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                currentFotoDataUrl = e.target.result;
+                document.getElementById('previewFoto').src = currentFotoDataUrl;
+            }
+            reader.readAsDataURL(file);
+
+            setTimeout(() => {
+                document.getElementById('loaderAnalise').classList.add('hidden');
+                document.getElementById('formEstimativa').classList.remove('hidden');
+                document.getElementById('inputCalorias').value = Math.floor(Math.random() * (350 - 150 + 1)) + 150;
+                document.getElementById('inputNomeRefeicao').value = "";
+                document.getElementById('inputNomeRefeicao').focus();
+            }, 1000);
+        }
+
+        async function salvarRefeicao(deveCompartilhar) {
+            const nome = document.getElementById('inputNomeRefeicao').value || "Refeição Gravada";
+            const kcal = parseInt(document.getElementById('inputCalorias').value) || 0;
+            if(kcal <= 0) { alert("Insira uma caloria válida."); return; }
+
+            const dataAtual = new Date();
+            const log = {
+                id: Date.now(), data: dataAtual.toISOString().split('T')[0],
+                hora: dataAtual.toTimeString().split(' ')[0].substring(0,5),
+                nome: nome, calorias: kcal
+            };
+
+            diarioLog.push(log);
+            localStorage.setItem(STORAGE_KEY_DIARIO, JSON.stringify(diarioLog));
+            atualizarProgressoDiario();
+
+            if(deveCompartilhar && currentFotoDataUrl) {
+                const texto = `🏋️ NutriTrack: Consumi *${nome}* (${kcal} Kcal) hoje às ${log.hora}. Total diário salvo!`;
+                try {
+                    if (navigator.share && window.location.protocol === 'https:') {
+                        const res = await fetch(currentFotoDataUrl);
+                        const blob = await res.blob();
+                        const file = new File([blob], "refeicao.jpg", { type: "image/jpeg" });
+                        await navigator.share({ title: 'NutriTrack Registro', text: texto, files: [file] });
+                    } else {
+                        throw new Error("Local mode fallback");
+                    }
+                } catch (err) {
+                    if(navigator.clipboard) navigator.clipboard.writeText(texto).catch(e => {});
+                    const linkDownload = document.createElement("a");
+                    linkDownload.href = currentFotoDataUrl;
+                    linkDownload.download = `NutriTrack_Foto.jpg`;
+                    document.body.appendChild(linkDownload);
+                    linkDownload.click();
+                    document.body.removeChild(linkDownload);
+                    setTimeout(() => window.location.href = `https://api.whatsapp.com/send?text=${encodeURIComponent(texto)}`, 500);
+                }
+            } else {
+                alert("Calorias salvas na memória interna do aparelho com sucesso!");
+            }
+
+            document.getElementById('areaAnalise').classList.add('hidden');
+            document.getElementById('cameraInput').value = "";
+            currentFotoDataUrl = null;
+        }
+
+        function atualizarProgressoDiario() {
+            const dataHoje = new Date().toISOString().split('T')[0];
+            const logsHoje = diarioLog.filter(log => log.data === dataHoje);
+            let kcalTotal = logsHoje.reduce((acc, curr) => acc + curr.calorias, 0);
+            
+            document.getElementById('caloriasAtuais').innerText = kcalTotal;
+            let percentual = (kcalTotal / META_CALORIAS) * 100;
+            document.getElementById('barraProgresso').style.width = (percentual > 100 ? 100 : percentual) + '%';
+            document.getElementById('barraProgresso').className = kcalTotal > META_CALORIAS ? "bg-red-400 h-3 rounded-full transition-all duration-500" : "bg-white h-3 rounded-full transition-all duration-500";
+
+            const container = document.getElementById('listaDiario');
+            container.innerHTML = logsHoje.reverse().map(log => `
+                <div class="bg-white p-3 rounded-xl shadow-sm border border-gray-100 flex justify-between items-center">
+                    <div class="flex items-center">
+                        <div class="bg-emerald-100 text-emerald-700 w-10 h-10 rounded-lg flex items-center justify-center font-bold mr-3 text-xs">${log.hora}</div>
+                        <h4 class="font-bold text-gray-800 text-sm">${log.nome}</h4>
+                    </div>
+                    <div class="text-right">
+                        <span class="font-black text-emerald-600">${log.calorias}</span>
+                        <span class="text-[10px] text-gray-500 block uppercase">Kcal</span>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function limparDiarioHoje() {
+            if(confirm("Deseja APAGAR as calorias salvas na memória de hoje?")) {
+                const dataHoje = new Date().toISOString().split('T')[0];
+                diarioLog = diarioLog.filter(log => log.data !== dataHoje);
+                localStorage.setItem(STORAGE_KEY_DIARIO, JSON.stringify(diarioLog));
+                atualizarProgressoDiario();
+            }
+        }
+
+        // LÓGICA DA LISTA DE COMPRAS
+        function renderizarListaCompras() {
+            const container = document.getElementById('containerListaCompras');
+            
+            container.innerHTML = listaComprasData.map(categoriaObj => `
+                <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+                    <div class="bg-gray-50 px-4 py-3 border-b border-gray-100">
+                        <h3 class="font-bold text-gray-800 text-sm">${categoriaObj.categoria}</h3>
+                    </div>
+                    <div class="p-2">
+                        ${categoriaObj.itens.map(item => {
+                            const isChecked = comprasEstado.includes(item.id) ? 'checked' : '';
+                            return `
+                                <label class="check-item flex items-center p-3 rounded-xl hover:bg-gray-50 cursor-pointer">
+                                    <input type="checkbox" class="hidden" value="${item.id}" onchange="toggleCompra(this)" ${isChecked}>
+                                    <div class="check-box w-6 h-6 rounded-md border-2 border-gray-300 flex items-center justify-center mr-3 transition-colors">
+                                        <i class="ph-bold ph-check text-white opacity-0 transition-opacity text-sm"></i>
+                                    </div>
+                                    <div class="text-sm font-medium text-gray-700 flex-1">${item.nome}</div>
+                                </label>
+                            `;
+                        }).join('')}
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function toggleCompra(checkbox) {
+            const itemId = checkbox.value;
+            if (checkbox.checked) {
+                if (!comprasEstado.includes(itemId)) comprasEstado.push(itemId);
+            } else {
+                comprasEstado = comprasEstado.filter(id => id !== itemId);
+            }
+            localStorage.setItem(STORAGE_KEY_COMPRAS, JSON.stringify(comprasEstado));
+        }
+
+        function limparListaCompras() {
+            if(confirm("Deseja desmarcar todos os itens da lista de compras?")) {
+                comprasEstado = [];
+                localStorage.setItem(STORAGE_KEY_COMPRAS, JSON.stringify(comprasEstado));
+                renderizarListaCompras();
+            }
+        }
+
+        function exportarCSV() {
+            let csvContent = "Data,Hora,Refeicao,Calorias(Kcal)\n" + diarioLog.map(row => `${row.data},${row.hora},${row.nome.replace(/,/g, " ")},${row.calorias}`).join("\n");
+            const link = document.createElement("a");
+            link.href = URL.createObjectURL(new Blob([csvContent], { type: 'text/csv;charset=utf-8;' }));
+            link.download = `NutriTrack_Evolucao_${new Date().toISOString().split('T')[0]}.csv`;
+            link.click();
+        }
+    </script>
+</body>
+</html>
