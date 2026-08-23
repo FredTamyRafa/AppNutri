@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>NutriTrack - Dieta V6</title>
+    <title>NutriTrack - Dieta V7</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/@phosphor-icons/web"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -19,9 +19,9 @@
         
         /* Checkbox Customizado */
         .check-item { transition: all 0.2s ease; }
-        .check-item input:checked + div.content-box { text-decoration: line-through; color: #9ca3af; }
-        .check-item input:checked ~ .check-box { background-color: #10b981; border-color: #10b981; }
-        .check-item input:checked ~ .check-box i { opacity: 1; }
+        .check-item input:checked + div.check-box { background-color: #10b981; border-color: #10b981; }
+        .check-item input:checked + div.check-box i { opacity: 1; }
+        .check-item input:checked ~ div.content-box { text-decoration: line-through; color: #9ca3af; }
     </style>
 </head>
 <body class="bg-gray-100 text-gray-800 font-sans antialiased">
@@ -33,7 +33,7 @@
         <header class="bg-emerald-600 text-white p-5 rounded-b-3xl shadow-lg relative z-10">
             <div class="flex justify-between items-center mb-4">
                 <div>
-                    <h1 class="text-2xl font-bold">NutriTrack V6</h1>
+                    <h1 class="text-2xl font-bold">NutriTrack V7</h1>
                     <p class="text-emerald-100 text-sm">Hipertrofia & Rotina (1180 kcal)</p>
                 </div>
                 <div class="w-12 h-12 rounded-full bg-white text-emerald-600 flex items-center justify-center shadow-inner">
@@ -54,7 +54,7 @@
                 <div class="grid grid-cols-3 gap-2 text-center">
                     <div class="bg-white/30 rounded p-1">
                         <p class="text-[9px] uppercase font-bold text-emerald-100">Proteína</p>
-                        <p class="text-sm font-black"><span id="protAtual">0</span><span class="text-[10px] font-normal">/120g</span></p>
+                        <p class="text-sm font-black"><span id="protAtual">0</span><span class="text-[10px] font-normal">/122g</span></p>
                     </div>
                     <div class="bg-white/30 rounded p-1">
                         <p class="text-[9px] uppercase font-bold text-emerald-100">Carboidrato</p>
@@ -74,7 +74,10 @@
                 <h2 class="text-xl font-bold text-gray-800">Cardápio Exato</h2>
                 <select id="seletorMenu" class="bg-white border border-gray-300 text-gray-700 text-sm rounded-lg focus:ring-emerald-500 focus:border-emerald-500 block p-2 shadow-sm outline-none w-1/2" onchange="renderizarCardapio()">
                     <option value="1">Menu 1: O Clássico</option>
+                    <option value="2">Menu 2: Mar & Horta</option>
+                    <option value="3">Menu 3: Praticidade</option>
                     <option value="4">Menu 4: Frutos do Mar</option>
+                    <option value="5">Menu 5: Sabor & Leveza</option>
                     <option value="6">Menu 6: Tradição & Feijão</option>
                     <option value="7">Menu 7: Almoço Rico</option>
                     <option value="8">Menu 8: Low Carb</option>
@@ -213,7 +216,7 @@
         <!-- ABA 4: RELATÓRIOS -->
         <main id="tab-relatorios" class="tab-content p-4">
             <h2 class="text-xl font-bold text-gray-800 mb-2">Relatórios</h2>
-            <p class="text-sm text-gray-500 mb-6">Exporte os dados em texto para a planilha do Engenheiro.</p>
+            <p class="text-sm text-gray-500 mb-6">Exporte os dados em texto para a planilha de acompanhamento.</p>
 
             <div class="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 text-center">
                 <div class="w-16 h-16 bg-emerald-100 rounded-full flex items-center justify-center mx-auto mb-4">
@@ -248,74 +251,95 @@
     </div>
 
     <script>
-        // BANCO DE DADOS NUTRICIONAL (Estrutura original mantida)
+        // BANCO DE DADOS NUTRICIONAL (V7 Macros Corrigidos com Tabela Brasileira de Composição de Alimentos)
         const menusData = {
             "1": [
-                { id: "R1", title: "Café da Manhã", time: "07:30", desc: "<strong>2 Ovos Inteiros</strong> mexidos no antiaderente.<br><strong>1 fatia (25g)</strong> de pão integral.<br><strong>80g</strong> de mamão papaia.", supp: "Multi + Ômega-3", nutri: "Prot: 18g | Carb: 20g | Gord: 10g", img: "https://images.unsplash.com/photo-1525351484163-7529414344d8?w=400&q=80" },
-                { id: "R2", title: "Lanche", time: "10:30", desc: "<strong>1 Unid (250ml)</strong> Whey Pronto Piracanjuba.", supp: "5g de Psyllium", nutri: "Prot: 23g | Carb: 12g | Gord: 3g", img: "https://images.unsplash.com/photo-1579722820308-d74e571900a9?w=400&q=80" },
-                { id: "R3", title: "Almoço", time: "13:00", desc: "<strong>130g</strong> Robalo/Badejo grelhado.<br><strong>70g</strong> Arroz integral.<br>Salada Tropical.", supp: "1 cáp. Morosil", nutri: "Prot: 32g | Carb: 20g | Gord: 8g", img: "https://images.unsplash.com/photo-1519708227418-c8fd9a32b7a2?w=400&q=80" },
-                { id: "R4", title: "Pré-Treino", time: "16:30", desc: "<strong>1 dose (30g)</strong> Whey Isolado Vitafor com água.<br><strong>80g</strong> morangos.", supp: "3g Creatina + 5g Psyllium", nutri: "Prot: 23g | Carb: 8g | Gord: 0g", img: "https://images.unsplash.com/photo-1629853909772-2d9dcbfbce08?w=400&q=80" },
-                { id: "R5", title: "Jantar", time: "19:30", desc: "<strong>120g</strong> Peito de frango.<br><strong>100g</strong> Abóbora cabotiá.<br>Folhas verdes.", supp: "1 cáp. Ômega-3", nutri: "Prot: 28g | Carb: 11g | Gord: 3g", img: "https://images.unsplash.com/photo-1532550907401-47153fbce22a?w=400&q=80" }
+                { id: "R1", title: "Café da Manhã", time: "07:30", desc: "<strong>2 Ovos Inteiros</strong> mexidos no antiaderente.<br><strong>1 fatia (25g)</strong> de pão integral.<br><strong>80g</strong> de mamão papaia.", supp: "Multi + Ômega-3", nutri: "Prot: 15g | Carb: 21g | Gord: 11g", img: "https://images.unsplash.com/photo-1525351484163-7529414344d8?w=400&q=80" },
+                { id: "R2", title: "Lanche", time: "10:30", desc: "<strong>1 Unid (250ml)</strong> Whey Pronto Piracanjuba.", supp: "5g de Psyllium", nutri: "Prot: 23g | Carb: 20g | Gord: 1g", img: "https://images.unsplash.com/photo-1579722820308-d74e571900a9?w=400&q=80" },
+                { id: "R3", title: "Almoço", time: "13:00", desc: "<strong>130g</strong> Robalo/Badejo grelhado.<br><strong>70g</strong> Arroz integral.<br>Salada Tropical.", supp: "1 cáp. Morosil", nutri: "Prot: 33g | Carb: 18g | Gord: 3g", img: "https://images.unsplash.com/photo-1519708227418-c8fd9a32b7a2?w=400&q=80" },
+                { id: "R4", title: "Pré-Treino", time: "16:30", desc: "<strong>1 dose (30g)</strong> Whey Isolado Vitafor com água.<br><strong>80g</strong> morangos.", supp: "3g Creatina + 5g Psyllium", nutri: "Prot: 24g | Carb: 8g | Gord: 0g", img: "https://images.unsplash.com/photo-1629853909772-2d9dcbfbce08?w=400&q=80" },
+                { id: "R5", title: "Jantar", time: "19:30", desc: "<strong>120g</strong> Peito de frango.<br><strong>100g</strong> Abóbora cabotiá.<br>Folhas verdes.", supp: "1 cáp. Ômega-3", nutri: "Prot: 36g | Carb: 10g | Gord: 3g", img: "https://images.unsplash.com/photo-1532550907401-47153fbce22a?w=400&q=80" }
+            ],
+            "2": [
+                { id: "R1", title: "Café da Manhã", time: "07:30", desc: "<strong>Omelete:</strong> 2 ovos com orégano/tomate + <strong>20g</strong> tapioca + <strong>1 kiwi</strong>.", supp: "Multi + Ômega-3", nutri: "Prot: 12g | Carb: 28g | Gord: 10g", img: "https://images.unsplash.com/photo-1510693202996-01d0bc880fb4?w=400&q=80" },
+                { id: "R2", title: "Lanche", time: "10:30", desc: "<strong>1 Unid (250ml)</strong> Whey Pronto Piracanjuba.", supp: "5g de Psyllium", nutri: "Prot: 23g | Carb: 20g | Gord: 1g", img: "https://images.unsplash.com/photo-1579722820308-d74e571900a9?w=400&q=80" },
+                { id: "R3", title: "Almoço", time: "13:00", desc: "<strong>130g</strong> Camarão grelhado.<br><strong>80g</strong> batata-doce.<br>Salada Crucíferas.", supp: "1 cáp. Morosil", nutri: "Prot: 26g | Carb: 16g | Gord: 1g", img: "https://images.unsplash.com/photo-1559742811-822873691df8?w=400&q=80" },
+                { id: "R4", title: "Pré-Treino", time: "16:30", desc: "<strong>1 dose (30g)</strong> Whey Isolado Vitafor.<br><strong>80g</strong> mirtilos.", supp: "3g Creatina + 5g Psyllium", nutri: "Prot: 24g | Carb: 13g | Gord: 0g", img: "https://images.unsplash.com/photo-1629853909772-2d9dcbfbce08?w=400&q=80" },
+                { id: "R5", title: "Jantar", time: "19:30", desc: "<strong>130g</strong> Dourado/Cação grelhado.<br>Abobrinha + espinafre.", supp: "1 cáp. Ômega-3", nutri: "Prot: 30g | Carb: 5g | Gord: 2g", img: "https://images.unsplash.com/photo-1580476262798-bddd9f4b7369?w=400&q=80" }
+            ],
+            "3": [
+                { id: "R1", title: "Café da Manhã", time: "07:30", desc: "<strong>Crepioca:</strong> 1 ovo + 2 claras + 20g goma.<br><strong>1 maçã</strong>.", supp: "Multi + Ômega-3", nutri: "Prot: 13g | Carb: 36g | Gord: 5g", img: "https://images.unsplash.com/photo-1615486171448-4d517c469cb9?w=400&q=80" },
+                { id: "R2", title: "Lanche", time: "10:30", desc: "<strong>1 Unid (250ml)</strong> Whey Pronto Piracanjuba.", supp: "5g de Psyllium", nutri: "Prot: 23g | Carb: 20g | Gord: 1g", img: "https://images.unsplash.com/photo-1579722820308-d74e571900a9?w=400&q=80" },
+                { id: "R3", title: "Almoço", time: "13:00", desc: "<strong>120g</strong> Patinho moído.<br><strong>80g</strong> mandioca cozida.<br>Salada Repolho.", supp: "1 cáp. Morosil", nutri: "Prot: 31g | Carb: 24g | Gord: 8g", img: "https://images.unsplash.com/photo-1588166524941-3bf61a9c41db?w=400&q=80" },
+                { id: "R4", title: "Pré-Treino", time: "16:30", desc: "<strong>1 dose (30g)</strong> Whey Isolado Vitafor.<br><strong>80g</strong> mamão picado.", supp: "3g Creatina + 5g Psyllium", nutri: "Prot: 24g | Carb: 11g | Gord: 0g", img: "https://images.unsplash.com/photo-1629853909772-2d9dcbfbce08?w=400&q=80" },
+                { id: "R5", title: "Jantar", time: "19:30", desc: "<strong>Omelete:</strong> 1 ovo + 3 claras.<br><strong>100g</strong> vagem e cenoura.", supp: "1 cáp. Ômega-3", nutri: "Prot: 16g | Carb: 7g | Gord: 5g", img: "https://images.unsplash.com/photo-1525351484163-7529414344d8?w=400&q=80" }
             ],
             "4": [
-                { id: "R1", title: "Café da Manhã", time: "07:30", desc: "<strong>2 Ovos</strong> cozidos.<br><strong>1 fatia (25g)</strong> pão torrado.<br><strong>100g</strong> morangos.", supp: "Multi + Ômega-3", nutri: "Prot: 16g | Carb: 22g | Gord: 9g", img: "https://images.unsplash.com/photo-1582169505937-b9992bd01ed9?w=400&q=80" },
-                { id: "R2", title: "Lanche", time: "10:30", desc: "<strong>1 Unid (250ml)</strong> Whey Pronto Piracanjuba.", supp: "5g de Psyllium", nutri: "Prot: 23g | Carb: 12g | Gord: 3g", img: "https://images.unsplash.com/photo-1579722820308-d74e571900a9?w=400&q=80" },
-                { id: "R3", title: "Almoço", time: "13:00", desc: "<strong>130g</strong> Lulas e Polvo.<br><strong>70g</strong> Arroz integral.<br>Salada.", supp: "1 cáp. Morosil", nutri: "Prot: 26g | Carb: 22g | Gord: 7g", img: "https://images.unsplash.com/photo-1599321955726-e04842669811?w=400&q=80" },
-                { id: "R4", title: "Pré-Treino", time: "16:30", desc: "<strong>1 dose (30g)</strong> Whey Isolado Vitafor.<br><strong>200ml</strong> Água de coco.", supp: "3g Creatina + 5g Psyllium", nutri: "Prot: 23g | Carb: 10g | Gord: 0g", img: "https://images.unsplash.com/photo-1629853909772-2d9dcbfbce08?w=400&q=80" },
-                { id: "R5", title: "Jantar", time: "19:30", desc: "<strong>120g</strong> Frango Grelhado.<br><strong>80g</strong> abóbora cozida.", supp: "1 cáp. Ômega-3", nutri: "Prot: 27g | Carb: 9g | Gord: 3g", img: "https://images.unsplash.com/photo-1532550907401-47153fbce22a?w=400&q=80" }
+                { id: "R1", title: "Café da Manhã", time: "07:30", desc: "<strong>2 Ovos</strong> cozidos.<br><strong>1 fatia (25g)</strong> pão torrado.<br><strong>100g</strong> morangos.", supp: "Multi + Ômega-3", nutri: "Prot: 15g | Carb: 20g | Gord: 10g", img: "https://images.unsplash.com/photo-1582169505937-b9992bd01ed9?w=400&q=80" },
+                { id: "R2", title: "Lanche", time: "10:30", desc: "<strong>1 Unid (250ml)</strong> Whey Pronto Piracanjuba.", supp: "5g de Psyllium", nutri: "Prot: 23g | Carb: 20g | Gord: 1g", img: "https://images.unsplash.com/photo-1579722820308-d74e571900a9?w=400&q=80" },
+                { id: "R3", title: "Almoço", time: "13:00", desc: "<strong>130g</strong> Lulas e Polvo.<br><strong>70g</strong> Arroz integral.<br>Salada Capixaba de Palmito.", supp: "1 cáp. Morosil", nutri: "Prot: 22g | Carb: 18g | Gord: 2g", img: "https://images.unsplash.com/photo-1599321955726-e04842669811?w=400&q=80" },
+                { id: "R4", title: "Pré-Treino", time: "16:30", desc: "<strong>1 dose (30g)</strong> Whey Isolado Vitafor.<br><strong>200ml</strong> Água de coco.", supp: "3g Creatina + 5g Psyllium", nutri: "Prot: 24g | Carb: 12g | Gord: 0g", img: "https://images.unsplash.com/photo-1629853909772-2d9dcbfbce08?w=400&q=80" },
+                { id: "R5", title: "Jantar", time: "19:30", desc: "<strong>120g</strong> Frango Grelhado.<br><strong>80g</strong> abóbora cozida.", supp: "1 cáp. Ômega-3", nutri: "Prot: 36g | Carb: 8g | Gord: 3g", img: "https://images.unsplash.com/photo-1532550907401-47153fbce22a?w=400&q=80" }
+            ],
+            "5": [
+                { id: "R1", title: "Café da Manhã", time: "07:30", desc: "<strong>2 Ovos</strong> mexidos com <strong>1 col. ricota</strong>.<br><strong>80g</strong> mamão.", supp: "Multi + Ômega-3", nutri: "Prot: 15g | Carb: 10g | Gord: 12g", img: "https://images.unsplash.com/photo-1525351484163-7529414344d8?w=400&q=80" },
+                { id: "R2", title: "Lanche", time: "10:30", desc: "<strong>1 Unid (250ml)</strong> Whey Pronto Piracanjuba.", supp: "5g de Psyllium", nutri: "Prot: 23g | Carb: 20g | Gord: 1g", img: "https://images.unsplash.com/photo-1579722820308-d74e571900a9?w=400&q=80" },
+                { id: "R3", title: "Almoço", time: "13:00", desc: "<strong>130g</strong> Filé Nadeirante/Garoupa.<br><strong>80g</strong> batata-doce.<br>Salada Mediterrânea.", supp: "1 cáp. Morosil", nutri: "Prot: 31g | Carb: 16g | Gord: 2g", img: "https://images.unsplash.com/photo-1519708227418-c8fd9a32b7a2?w=400&q=80" },
+                { id: "R4", title: "Pré-Treino", time: "16:30", desc: "<strong>1 dose (30g)</strong> Whey Isolado Vitafor.<br><strong>1 kiwi</strong>.", supp: "3g Creatina + 5g Psyllium", nutri: "Prot: 24g | Carb: 12g | Gord: 0g", img: "https://images.unsplash.com/photo-1629853909772-2d9dcbfbce08?w=400&q=80" },
+                { id: "R5", title: "Jantar", time: "19:30", desc: "<strong>130g</strong> Camarão salteado com alho-poró.<br>Salada verde.", supp: "1 cáp. Ômega-3", nutri: "Prot: 26g | Carb: 5g | Gord: 1g", img: "https://images.unsplash.com/photo-1559742811-822873691df8?w=400&q=80" }
             ],
             "6": [
-                { id: "R1", title: "Café da Manhã", time: "07:30", desc: "<strong>2 Ovos</strong> mexidos.<br><strong>20g</strong> goma de tapioca.<br><strong>80g</strong> mamão papaia.", supp: "Multi + Ômega-3", nutri: "Prot: 14g | Carb: 25g | Gord: 10g", img: "https://images.unsplash.com/photo-1510693202996-01d0bc880fb4?w=400&q=80" },
-                { id: "R2", title: "Lanche", time: "10:30", desc: "<strong>1 Unid (250ml)</strong> Whey Pronto Piracanjuba.", supp: "5g de Psyllium", nutri: "Prot: 23g | Carb: 12g | Gord: 3g", img: "https://images.unsplash.com/photo-1579722820308-d74e571900a9?w=400&q=80" },
-                { id: "R3", title: "Almoço (Feijão)", time: "13:00", desc: "<strong>110g</strong> Frango Grelhado.<br><strong>60g</strong> Arroz.<br><strong>60g</strong> Feijão.", supp: "1 cáp. Morosil", nutri: "Prot: 34g | Carb: 28g | Gord: 5g", img: "https://images.unsplash.com/photo-1588166524941-3bf61a9c41db?w=400&q=80" },
-                { id: "R4", title: "Pré-Treino", time: "16:30", desc: "<strong>1 dose (30g)</strong> Whey Isolado Vitafor.<br><strong>1 Unid (70g)</strong> kiwi.", supp: "3g Creatina + 5g Psyllium", nutri: "Prot: 23g | Carb: 12g | Gord: 0g", img: "https://images.unsplash.com/photo-1629853909772-2d9dcbfbce08?w=400&q=80" },
-                { id: "R5", title: "Jantar", time: "19:30", desc: "<strong>120g</strong> Filé de Peixe Magro.<br><strong>100g</strong> Abobrinha grelhada.", supp: "1 cáp. Ômega-3", nutri: "Prot: 26g | Carb: 4g | Gord: 3g", img: "https://images.unsplash.com/photo-1559742811-822873691df8?w=400&q=80" }
+                { id: "R1", title: "Café da Manhã", time: "07:30", desc: "<strong>2 Ovos</strong> mexidos.<br><strong>20g</strong> goma de tapioca.<br><strong>80g</strong> mamão papaia.", supp: "Multi + Ômega-3", nutri: "Prot: 12g | Carb: 27g | Gord: 10g", img: "https://images.unsplash.com/photo-1510693202996-01d0bc880fb4?w=400&q=80" },
+                { id: "R2", title: "Lanche", time: "10:30", desc: "<strong>1 Unid (250ml)</strong> Whey Pronto Piracanjuba.", supp: "5g de Psyllium", nutri: "Prot: 23g | Carb: 20g | Gord: 1g", img: "https://images.unsplash.com/photo-1579722820308-d74e571900a9?w=400&q=80" },
+                { id: "R3", title: "Almoço (Feijão)", time: "13:00", desc: "<strong>110g</strong> Frango Grelhado.<br><strong>60g</strong> Arroz.<br><strong>60g</strong> Feijão.", supp: "1 cáp. Morosil", nutri: "Prot: 38g | Carb: 23g | Gord: 3g", img: "https://images.unsplash.com/photo-1588166524941-3bf61a9c41db?w=400&q=80" },
+                { id: "R4", title: "Pré-Treino", time: "16:30", desc: "<strong>1 dose (30g)</strong> Whey Isolado Vitafor.<br><strong>1 Unid (70g)</strong> kiwi.", supp: "3g Creatina + 5g Psyllium", nutri: "Prot: 24g | Carb: 12g | Gord: 0g", img: "https://images.unsplash.com/photo-1629853909772-2d9dcbfbce08?w=400&q=80" },
+                { id: "R5", title: "Jantar", time: "19:30", desc: "<strong>120g</strong> Filé de Peixe Magro.<br><strong>100g</strong> Abobrinha grelhada.", supp: "1 cáp. Ômega-3", nutri: "Prot: 28g | Carb: 3g | Gord: 2g", img: "https://images.unsplash.com/photo-1559742811-822873691df8?w=400&q=80" }
             ],
             "7": [
-                { id: "R1", title: "Café da Manhã", time: "07:30", desc: "<strong>Crepioca:</strong> 1 Ovo + 2 Claras + 20g Tapioca.<br><strong>1 Unid</strong> Maçã.", supp: "Multi + Ômega-3", nutri: "Prot: 15g | Carb: 35g | Gord: 5g", img: "https://images.unsplash.com/photo-1615486171448-4d517c469cb9?w=400&q=80" },
-                { id: "R2", title: "Lanche", time: "10:30", desc: "<strong>1 Unid (250ml)</strong> Whey Pronto Piracanjuba.", supp: "5g de Psyllium", nutri: "Prot: 23g | Carb: 12g | Gord: 3g", img: "https://images.unsplash.com/photo-1579722820308-d74e571900a9?w=400&q=80" },
-                { id: "R3", title: "Almoço (Feijão)", time: "13:00", desc: "<strong>110g</strong> Patinho moído.<br><strong>70g</strong> Batata-Doce.<br><strong>60g</strong> Feijão.", supp: "1 cáp. Morosil", nutri: "Prot: 33g | Carb: 28g | Gord: 6g", img: "https://images.unsplash.com/photo-1519708227418-c8fd9a32b7a2?w=400&q=80" },
-                { id: "R4", title: "Pré-Treino", time: "16:30", desc: "<strong>1 dose (30g)</strong> Whey Isolado Vitafor.<br><strong>80g</strong> Morangos.", supp: "3g Creatina + 5g Psyllium", nutri: "Prot: 23g | Carb: 6g | Gord: 0g", img: "https://images.unsplash.com/photo-1629853909772-2d9dcbfbce08?w=400&q=80" },
-                { id: "R5", title: "Jantar", time: "19:30", desc: "<strong>Omelete:</strong> 1 Ovo + 3 Claras.<br>Vegetais no vapor.", supp: "1 cáp. Ômega-3", nutri: "Prot: 18g | Carb: 8g | Gord: 5g", img: "https://images.unsplash.com/photo-1525351484163-7529414344d8?w=400&q=80" }
+                { id: "R1", title: "Café da Manhã", time: "07:30", desc: "<strong>Crepioca:</strong> 1 Ovo + 2 Claras + 20g Tapioca.<br><strong>1 Unid</strong> Maçã.", supp: "Multi + Ômega-3", nutri: "Prot: 13g | Carb: 36g | Gord: 5g", img: "https://images.unsplash.com/photo-1615486171448-4d517c469cb9?w=400&q=80" },
+                { id: "R2", title: "Lanche", time: "10:30", desc: "<strong>1 Unid (250ml)</strong> Whey Pronto Piracanjuba.", supp: "5g de Psyllium", nutri: "Prot: 23g | Carb: 20g | Gord: 1g", img: "https://images.unsplash.com/photo-1579722820308-d74e571900a9?w=400&q=80" },
+                { id: "R3", title: "Almoço (Feijão)", time: "13:00", desc: "<strong>110g</strong> Patinho moído.<br><strong>70g</strong> Batata-Doce.<br><strong>60g</strong> Feijão.", supp: "1 cáp. Morosil", nutri: "Prot: 28g | Carb: 22g | Gord: 8g", img: "https://images.unsplash.com/photo-1519708227418-c8fd9a32b7a2?w=400&q=80" },
+                { id: "R4", title: "Pré-Treino", time: "16:30", desc: "<strong>1 dose (30g)</strong> Whey Isolado Vitafor.<br><strong>80g</strong> Morangos.", supp: "3g Creatina + 5g Psyllium", nutri: "Prot: 24g | Carb: 8g | Gord: 0g", img: "https://images.unsplash.com/photo-1629853909772-2d9dcbfbce08?w=400&q=80" },
+                { id: "R5", title: "Jantar", time: "19:30", desc: "<strong>Omelete:</strong> 1 Ovo + 3 Claras.<br>Vegetais no vapor.", supp: "1 cáp. Ômega-3", nutri: "Prot: 16g | Carb: 5g | Gord: 5g", img: "https://images.unsplash.com/photo-1525351484163-7529414344d8?w=400&q=80" }
             ],
             "8": [
-                { id: "R1", title: "Café da Manhã", time: "07:30", desc: "<strong>2 Ovos</strong> mexidos.<br><strong>30g</strong> Queijo minas frescal.<br><strong>150g</strong> Mamão papaia.", supp: "Multi + Ômega-3", nutri: "Prot: 18g | Carb: 15g | Gord: 12g", img: "https://images.unsplash.com/photo-1525351484163-7529414344d8?w=400&q=80" },
-                { id: "R2", title: "Lanche", time: "10:30", desc: "<strong>1 Unid (250ml)</strong> Whey Pronto Piracanjuba.", supp: "5g de Psyllium", nutri: "Prot: 23g | Carb: 12g | Gord: 3g", img: "https://images.unsplash.com/photo-1579722820308-d74e571900a9?w=400&q=80" },
-                { id: "R3", title: "Almoço", time: "13:00", desc: "<strong>130g</strong> Peito de Frango.<br><strong>80g</strong> Mandioca cozida.", supp: "1 cáp. Morosil", nutri: "Prot: 32g | Carb: 24g | Gord: 5g", img: "https://images.unsplash.com/photo-1532550907401-47153fbce22a?w=400&q=80" },
-                { id: "R4", title: "Pré-Treino", time: "16:30", desc: "<strong>1 dose (30g)</strong> Whey Isolado Vitafor.<br><strong>100g</strong> Melão.", supp: "3g Creatina + 5g Psyllium", nutri: "Prot: 23g | Carb: 8g | Gord: 0g", img: "https://images.unsplash.com/photo-1629853909772-2d9dcbfbce08?w=400&q=80" },
-                { id: "R5", title: "Jantar", time: "19:30", desc: "<strong>140g</strong> Tilápia/Pescada.<br><strong>100g</strong> Brócolis/Couve-flor.", supp: "1 cáp. Ômega-3", nutri: "Prot: 28g | Carb: 5g | Gord: 3g", img: "https://images.unsplash.com/photo-1519708227418-c8fd9a32b7a2?w=400&q=80" }
+                { id: "R1", title: "Café da Manhã", time: "07:30", desc: "<strong>2 Ovos</strong> mexidos.<br><strong>30g</strong> Queijo minas frescal.<br><strong>150g</strong> Mamão papaia.", supp: "Multi + Ômega-3", nutri: "Prot: 17g | Carb: 17g | Gord: 16g", img: "https://images.unsplash.com/photo-1525351484163-7529414344d8?w=400&q=80" },
+                { id: "R2", title: "Lanche", time: "10:30", desc: "<strong>1 Unid (250ml)</strong> Whey Pronto Piracanjuba.", supp: "5g de Psyllium", nutri: "Prot: 23g | Carb: 20g | Gord: 1g", img: "https://images.unsplash.com/photo-1579722820308-d74e571900a9?w=400&q=80" },
+                { id: "R3", title: "Almoço", time: "13:00", desc: "<strong>130g</strong> Peito de Frango.<br><strong>80g</strong> Mandioca cozida.", supp: "1 cáp. Morosil", nutri: "Prot: 39g | Carb: 24g | Gord: 4g", img: "https://images.unsplash.com/photo-1532550907401-47153fbce22a?w=400&q=80" },
+                { id: "R4", title: "Pré-Treino", time: "16:30", desc: "<strong>1 dose (30g)</strong> Whey Isolado Vitafor.<br><strong>100g</strong> Melão.", supp: "3g Creatina + 5g Psyllium", nutri: "Prot: 24g | Carb: 10g | Gord: 0g", img: "https://images.unsplash.com/photo-1629853909772-2d9dcbfbce08?w=400&q=80" },
+                { id: "R5", title: "Jantar", time: "19:30", desc: "<strong>140g</strong> Tilápia/Pescada.<br><strong>100g</strong> Brócolis/Couve-flor.", supp: "1 cáp. Ômega-3", nutri: "Prot: 33g | Carb: 4g | Gord: 3g", img: "https://images.unsplash.com/photo-1519708227418-c8fd9a32b7a2?w=400&q=80" }
             ],
             "9": [
-                { id: "R1", title: "Café da Manhã", time: "07:30", desc: "<strong>Mingau:</strong> 30g Aveia + 100ml leite desnatado + 1 clara.", supp: "Multi + Ômega-3", nutri: "Prot: 10g | Carb: 25g | Gord: 4g", img: "https://images.unsplash.com/photo-1517673132405-a56a62b18caf?w=400&q=80" },
-                { id: "R2", title: "Lanche", time: "10:30", desc: "<strong>1 Unid (250ml)</strong> Whey Pronto Piracanjuba.", supp: "5g de Psyllium", nutri: "Prot: 23g | Carb: 12g | Gord: 3g", img: "https://images.unsplash.com/photo-1579722820308-d74e571900a9?w=400&q=80" },
-                { id: "R3", title: "Almoço", time: "13:00", desc: "<strong>120g</strong> Patinho Moído.<br><strong>80g</strong> Macarrão integral.", supp: "1 cáp. Morosil", nutri: "Prot: 30g | Carb: 25g | Gord: 7g", img: "https://images.unsplash.com/photo-1588166524941-3bf61a9c41db?w=400&q=80" },
-                { id: "R4", title: "Pré-Treino", time: "16:30", desc: "<strong>1 dose (30g)</strong> Whey Isolado Vitafor.<br><strong>40g</strong> Banana prata.", supp: "3g Creatina + 5g Psyllium", nutri: "Prot: 23g | Carb: 10g | Gord: 0g", img: "https://images.unsplash.com/photo-1629853909772-2d9dcbfbce08?w=400&q=80" },
-                { id: "R5", title: "Jantar", time: "19:30", desc: "<strong>120g</strong> Frango desfiado.<br>Salada de repolho.", supp: "1 cáp. Ômega-3", nutri: "Prot: 28g | Carb: 5g | Gord: 3g", img: "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=400&q=80" }
+                { id: "R1", title: "Café da Manhã", time: "07:30", desc: "<strong>Mingau:</strong> 30g Aveia + 100ml leite desnatado + 1 clara.", supp: "Multi + Ômega-3", nutri: "Prot: 11g | Carb: 23g | Gord: 3g", img: "https://images.unsplash.com/photo-1517673132405-a56a62b18caf?w=400&q=80" },
+                { id: "R2", title: "Lanche", time: "10:30", desc: "<strong>1 Unid (250ml)</strong> Whey Pronto Piracanjuba.", supp: "5g de Psyllium", nutri: "Prot: 23g | Carb: 20g | Gord: 1g", img: "https://images.unsplash.com/photo-1579722820308-d74e571900a9?w=400&q=80" },
+                { id: "R3", title: "Almoço", time: "13:00", desc: "<strong>120g</strong> Patinho Moído.<br><strong>80g</strong> Macarrão integral.", supp: "1 cáp. Morosil", nutri: "Prot: 31g | Carb: 22g | Gord: 8g", img: "https://images.unsplash.com/photo-1588166524941-3bf61a9c41db?w=400&q=80" },
+                { id: "R4", title: "Pré-Treino", time: "16:30", desc: "<strong>1 dose (30g)</strong> Whey Isolado Vitafor.<br><strong>40g</strong> Banana prata.", supp: "3g Creatina + 5g Psyllium", nutri: "Prot: 24g | Carb: 11g | Gord: 0g", img: "https://images.unsplash.com/photo-1629853909772-2d9dcbfbce08?w=400&q=80" },
+                { id: "R5", title: "Jantar", time: "19:30", desc: "<strong>120g</strong> Frango desfiado.<br>Salada de repolho.", supp: "1 cáp. Ômega-3", nutri: "Prot: 36g | Carb: 8g | Gord: 3g", img: "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=400&q=80" }
             ],
             "10": [
-                { id: "R1", title: "Café da Manhã", time: "07:30", desc: "<strong>Crepioca:</strong> 1 Ovo + 20g Tapioca.<br>Recheio: <strong>20g</strong> Cottage.<br><strong>80g</strong> Morangos.", supp: "Multi + Ômega-3", nutri: "Prot: 12g | Carb: 20g | Gord: 6g", img: "https://images.unsplash.com/photo-1615486171448-4d517c469cb9?w=400&q=80" },
-                { id: "R2", title: "Lanche", time: "10:30", desc: "<strong>1 Unid (250ml)</strong> Whey Pronto Piracanjuba.", supp: "5g de Psyllium", nutri: "Prot: 23g | Carb: 12g | Gord: 3g", img: "https://images.unsplash.com/photo-1579722820308-d74e571900a9?w=400&q=80" },
-                { id: "R3", title: "Almoço", time: "13:00", desc: "<strong>130g</strong> Peixe Branco.<br><strong>70g</strong> Arroz integral.", supp: "1 cáp. Morosil", nutri: "Prot: 30g | Carb: 20g | Gord: 5g", img: "https://images.unsplash.com/photo-1599321955726-e04842669811?w=400&q=80" },
-                { id: "R4", title: "Pré-Treino", time: "16:30", desc: "<strong>1 dose (30g)</strong> Whey Isolado Vitafor.<br><strong>150ml</strong> Água de coco.", supp: "3g Creatina + 5g Psyllium", nutri: "Prot: 23g | Carb: 8g | Gord: 0g", img: "https://images.unsplash.com/photo-1629853909772-2d9dcbfbce08?w=400&q=80" },
-                { id: "R5", title: "Jantar", time: "19:30", desc: "<strong>130g</strong> Camarão grelhado.<br><strong>100g</strong> Abobrinha.", supp: "1 cáp. Ômega-3", nutri: "Prot: 26g | Carb: 5g | Gord: 3g", img: "https://images.unsplash.com/photo-1559742811-822873691df8?w=400&q=80" }
+                { id: "R1", title: "Café da Manhã", time: "07:30", desc: "<strong>Crepioca:</strong> 1 Ovo + 20g Tapioca.<br>Recheio: <strong>40g</strong> Cottage.<br><strong>80g</strong> Morangos.", supp: "Multi + Ômega-3", nutri: "Prot: 10g | Carb: 24g | Gord: 7g", img: "https://images.unsplash.com/photo-1615486171448-4d517c469cb9?w=400&q=80" },
+                { id: "R2", title: "Lanche", time: "10:30", desc: "<strong>1 Unid (250ml)</strong> Whey Pronto Piracanjuba.", supp: "5g de Psyllium", nutri: "Prot: 23g | Carb: 20g | Gord: 1g", img: "https://images.unsplash.com/photo-1579722820308-d74e571900a9?w=400&q=80" },
+                { id: "R3", title: "Almoço", time: "13:00", desc: "<strong>130g</strong> Peixe Branco.<br><strong>70g</strong> Arroz integral.", supp: "1 cáp. Morosil", nutri: "Prot: 31g | Carb: 18g | Gord: 2g", img: "https://images.unsplash.com/photo-1599321955726-e04842669811?w=400&q=80" },
+                { id: "R4", title: "Pré-Treino", time: "16:30", desc: "<strong>1 dose (30g)</strong> Whey Isolado Vitafor.<br><strong>150ml</strong> Água de coco.", supp: "3g Creatina + 5g Psyllium", nutri: "Prot: 24g | Carb: 9g | Gord: 0g", img: "https://images.unsplash.com/photo-1629853909772-2d9dcbfbce08?w=400&q=80" },
+                { id: "R5", title: "Jantar", time: "19:30", desc: "<strong>130g</strong> Camarão grelhado.<br><strong>100g</strong> Abobrinha.", supp: "1 cáp. Ômega-3", nutri: "Prot: 26g | Carb: 3g | Gord: 1g", img: "https://images.unsplash.com/photo-1559742811-822873691df8?w=400&q=80" }
             ],
             "11": [
-                { id: "R1", title: "Café da Manhã", time: "07:30", desc: "<strong>2 Ovos</strong> cozidos.<br><strong>20g</strong> Torradas integrais.<br><strong>70g</strong> Abacaxi.", supp: "Multi + Ômega-3", nutri: "Prot: 13g | Carb: 22g | Gord: 10g", img: "https://images.unsplash.com/photo-1582169505937-b9992bd01ed9?w=400&q=80" },
-                { id: "R2", title: "Lanche", time: "10:30", desc: "<strong>1 Unid (250ml)</strong> Whey Pronto Piracanjuba.", supp: "5g de Psyllium", nutri: "Prot: 23g | Carb: 12g | Gord: 3g", img: "https://images.unsplash.com/photo-1579722820308-d74e571900a9?w=400&q=80" },
-                { id: "R3", title: "Almoço", time: "13:00", desc: "<strong>130g</strong> Sobrecoxa s/ pele (Airfryer).<br><strong>70g</strong> Batata inglesa (Airfryer).", supp: "1 cáp. Morosil", nutri: "Prot: 28g | Carb: 15g | Gord: 8g", img: "https://images.unsplash.com/photo-1598514982205-f36b96d1e8d4?w=400&q=80" },
-                { id: "R4", title: "Pré-Treino", time: "16:30", desc: "<strong>1 dose (30g)</strong> Whey Isolado Vitafor.<br><strong>80g</strong> Mamão.", supp: "3g Creatina + 5g Psyllium", nutri: "Prot: 23g | Carb: 9g | Gord: 0g", img: "https://images.unsplash.com/photo-1629853909772-2d9dcbfbce08?w=400&q=80" },
-                { id: "R5", title: "Jantar", time: "19:30", desc: "<strong>120g</strong> Iscas de lombo suíno.<br><strong>100g</strong> Cenoura/Vagem.", supp: "1 cáp. Ômega-3", nutri: "Prot: 28g | Carb: 8g | Gord: 5g", img: "https://images.unsplash.com/photo-1529692236671-f1f6cf9683ba?w=400&q=80" }
+                { id: "R1", title: "Café da Manhã", time: "07:30", desc: "<strong>2 Ovos</strong> cozidos.<br><strong>20g</strong> Torradas integrais.<br><strong>70g</strong> Abacaxi.", supp: "Multi + Ômega-3", nutri: "Prot: 14g | Carb: 23g | Gord: 10g", img: "https://images.unsplash.com/photo-1582169505937-b9992bd01ed9?w=400&q=80" },
+                { id: "R2", title: "Lanche", time: "10:30", desc: "<strong>1 Unid (250ml)</strong> Whey Pronto Piracanjuba.", supp: "5g de Psyllium", nutri: "Prot: 23g | Carb: 20g | Gord: 1g", img: "https://images.unsplash.com/photo-1579722820308-d74e571900a9?w=400&q=80" },
+                { id: "R3", title: "Almoço", time: "13:00", desc: "<strong>130g</strong> Sobrecoxa s/ pele (Airfryer).<br><strong>70g</strong> Batata inglesa (Airfryer).", supp: "1 cáp. Morosil", nutri: "Prot: 30g | Carb: 12g | Gord: 9g", img: "https://images.unsplash.com/photo-1598514982205-f36b96d1e8d4?w=400&q=80" },
+                { id: "R4", title: "Pré-Treino", time: "16:30", desc: "<strong>1 dose (30g)</strong> Whey Isolado Vitafor.<br><strong>80g</strong> Mamão.", supp: "3g Creatina + 5g Psyllium", nutri: "Prot: 24g | Carb: 11g | Gord: 0g", img: "https://images.unsplash.com/photo-1629853909772-2d9dcbfbce08?w=400&q=80" },
+                { id: "R5", title: "Jantar", time: "19:30", desc: "<strong>120g</strong> Iscas de lombo suíno.<br><strong>100g</strong> Cenoura/Vagem.", supp: "1 cáp. Ômega-3", nutri: "Prot: 30g | Carb: 7g | Gord: 7g", img: "https://images.unsplash.com/photo-1529692236671-f1f6cf9683ba?w=400&q=80" }
             ],
             "12": [
-                { id: "R1", title: "Café da Manhã", time: "07:30", desc: "<strong>Panqueca:</strong> 1 Ovo + 1 Clara + 1/2 Banana + 10g Aveia.", supp: "Multi + Ômega-3", nutri: "Prot: 14g | Carb: 20g | Gord: 5g", img: "https://images.unsplash.com/photo-1528207776546-365bb710ee93?w=400&q=80" },
-                { id: "R2", title: "Lanche", time: "10:30", desc: "<strong>1 Unid (250ml)</strong> Whey Pronto Piracanjuba.", supp: "5g de Psyllium", nutri: "Prot: 23g | Carb: 12g | Gord: 3g", img: "https://images.unsplash.com/photo-1579722820308-d74e571900a9?w=400&q=80" },
-                { id: "R3", title: "Almoço", time: "13:00", desc: "<strong>130g</strong> Atum/Sardinha.<br><strong>70g</strong> Quinoa/Arroz.", supp: "1 cáp. Morosil", nutri: "Prot: 30g | Carb: 20g | Gord: 8g", img: "https://images.unsplash.com/photo-1519708227418-c8fd9a32b7a2?w=400&q=80" },
-                { id: "R4", title: "Pré-Treino", time: "16:30", desc: "<strong>1 dose (30g)</strong> Whey Isolado Vitafor.<br><strong>1 Unid (70g)</strong> kiwi.", supp: "3g Creatina + 5g Psyllium", nutri: "Prot: 23g | Carb: 10g | Gord: 0g", img: "https://images.unsplash.com/photo-1629853909772-2d9dcbfbce08?w=400&q=80" },
-                { id: "R5", title: "Jantar", time: "19:30", desc: "<strong>Omelete:</strong> 1 Ovo + 3 Claras.<br><strong>50g</strong> Frango desfiado.", supp: "1 cáp. Ômega-3", nutri: "Prot: 28g | Carb: 5g | Gord: 6g", img: "https://images.unsplash.com/photo-1525351484163-7529414344d8?w=400&q=80" }
+                { id: "R1", title: "Café da Manhã", time: "07:30", desc: "<strong>Panqueca:</strong> 1 Ovo + 1 Clara + 1/2 Banana + 10g Aveia.", supp: "Multi + Ômega-3", nutri: "Prot: 10g | Carb: 18g | Gord: 5g", img: "https://images.unsplash.com/photo-1528207776546-365bb710ee93?w=400&q=80" },
+                { id: "R2", title: "Lanche", time: "10:30", desc: "<strong>1 Unid (250ml)</strong> Whey Pronto Piracanjuba.", supp: "5g de Psyllium", nutri: "Prot: 23g | Carb: 20g | Gord: 1g", img: "https://images.unsplash.com/photo-1579722820308-d74e571900a9?w=400&q=80" },
+                { id: "R3", title: "Almoço", time: "13:00", desc: "<strong>130g</strong> Atum/Sardinha.<br><strong>70g</strong> Quinoa/Arroz.", supp: "1 cáp. Morosil", nutri: "Prot: 32g | Carb: 14g | Gord: 6g", img: "https://images.unsplash.com/photo-1519708227418-c8fd9a32b7a2?w=400&q=80" },
+                { id: "R4", title: "Pré-Treino", time: "16:30", desc: "<strong>1 dose (30g)</strong> Whey Isolado Vitafor.<br><strong>1 Unid (70g)</strong> kiwi.", supp: "3g Creatina + 5g Psyllium", nutri: "Prot: 24g | Carb: 12g | Gord: 0g", img: "https://images.unsplash.com/photo-1629853909772-2d9dcbfbce08?w=400&q=80" },
+                { id: "R5", title: "Jantar", time: "19:30", desc: "<strong>Omelete:</strong> 1 Ovo + 3 Claras.<br><strong>50g</strong> Frango desfiado.", supp: "1 cáp. Ômega-3", nutri: "Prot: 31g | Carb: 5g | Gord: 6g", img: "https://images.unsplash.com/photo-1525351484163-7529414344d8?w=400&q=80" }
             ]
         };
 
-        // LISTA DE COMPRAS V6 (Itens separados e quantidades calculadas para 12 dias)
+        // LISTA DE COMPRAS V7 (Atualizada com insumos para todos os 12 Menus)
         const listaComprasData = [
             {
                 categoria: "Açougue & Peixaria",
@@ -324,10 +348,10 @@
                     { id: "c1_2", nome: "Peito de Frango Desfiado", qtd: "500g" },
                     { id: "c2", nome: "Patinho Moído Magro", qtd: "800g" },
                     { id: "c3", nome: "Lombo Suíno (Iscas/Bifes)", qtd: "400g" },
-                    { id: "c4", nome: "Peixe Branco (Robalo/Tilápia)", qtd: "1.2 kg" },
+                    { id: "c4", nome: "Peixe Branco (Robalo/Tilápia/Cação/Garoupa)", qtd: "1.5 kg" },
                     { id: "c5", nome: "Atum Fresco ou Lata", qtd: "300g" },
                     { id: "c5_2", nome: "Sardinha", qtd: "200g" },
-                    { id: "c6", nome: "Camarão Limpo", qtd: "400g" },
+                    { id: "c6", nome: "Camarão Limpo", qtd: "600g" },
                     { id: "c7", nome: "Lulas em Anéis", qtd: "300g" },
                     { id: "c7_2", nome: "Polvo", qtd: "300g" },
                     { id: "c8", nome: "Sobrecoxa (Sem Pele)", qtd: "600g" }
@@ -337,7 +361,7 @@
                 categoria: "Hortifruti",
                 itens: [
                     { id: "c9", nome: "Abóbora Cabotiá", qtd: "1.5 kg" },
-                    { id: "c10_1", nome: "Batata-doce", qtd: "1.2 kg" },
+                    { id: "c10_1", nome: "Batata-doce", qtd: "1.5 kg" },
                     { id: "c10_2", nome: "Mandioca", qtd: "800g" },
                     { id: "c11", nome: "Batata Inglesa", qtd: "500g" },
                     { id: "c12_1", nome: "Brócolis", qtd: "2 maços" },
@@ -346,11 +370,12 @@
                     { id: "c13_2", nome: "Vagem", qtd: "400g" },
                     { id: "c14_1", nome: "Abobrinha", qtd: "4 unid." },
                     { id: "c14_2", nome: "Berinjela", qtd: "2 unid." },
-                    { id: "c15_1", nome: "Alface e Folhas Verdes", qtd: "4 pés" },
-                    { id: "c16_1", nome: "Tomate Cereja/Normal", qtd: "1 kg" },
+                    { id: "c15_1", nome: "Alface e Espinafre", qtd: "4 pés" },
+                    { id: "c16_1", nome: "Tomate e Pepino", qtd: "1 kg" },
                     { id: "c18", nome: "Palmito Pupunha", qtd: "1 vidro" },
+                    { id: "c18_2", nome: "Alho-poró e Ervas Frescas", qtd: "Maços" },
                     { id: "c19", nome: "Mamão Papaia", qtd: "4 unid." },
-                    { id: "c20", nome: "Morangos Frescos", qtd: "5 caixas" },
+                    { id: "c20", nome: "Morangos e Mirtilos", qtd: "6 caixas" },
                     { id: "c21_1", nome: "Maçã", qtd: "6 unid." },
                     { id: "c21_2", nome: "Kiwi", qtd: "8 unid." },
                     { id: "c22_1", nome: "Melão", qtd: "1 unid." },
@@ -361,9 +386,9 @@
             {
                 categoria: "Laticínios & Ovos",
                 itens: [
-                    { id: "c24", nome: "Ovos Grandes", qtd: "60 ovos (2 cartelas)" },
-                    { id: "c25", title: "Queijo Minas Frescal Light", qtd: "400g" },
-                    { id: "c26", nome: "Queijo Cottage", qtd: "200g" },
+                    { id: "c24", nome: "Ovos Grandes", qtd: "60 ovos" },
+                    { id: "c25", nome: "Queijo Minas Frescal Light", qtd: "400g" },
+                    { id: "c26", nome: "Queijo Cottage e Ricota", qtd: "300g" },
                     { id: "c27", nome: "Leite Desnatado", qtd: "1 Litro" }
                 ]
             },
@@ -375,10 +400,9 @@
                     { id: "c29", nome: "Feijão Carioca/Preto", qtd: "1 kg" },
                     { id: "c30", nome: "Macarrão Integral", qtd: "500g" },
                     { id: "c31", nome: "Aveia em Flocos", qtd: "500g" },
-                    { id: "c32", nome: "Pão Integral (Forma)", qtd: "1 pacote" },
+                    { id: "c32", nome: "Pão Integral e Torradas", qtd: "1 pacote" },
                     { id: "c33", nome: "Goma de Tapioca", qtd: "500g" },
                     { id: "c34", nome: "Azeite Extra Virgem", qtd: "1 garrafa" },
-                    { id: "c35", nome: "Chás e Café", qtd: "Livre" },
                     { id: "c36", nome: "Água de Coco (200ml)", qtd: "8 caixinhas" }
                 ]
             },
@@ -386,23 +410,23 @@
                 categoria: "Suplementação",
                 itens: [
                     { id: "c37", nome: "Whey Pronto Piracanjuba", qtd: "12 unidades" },
-                    { id: "c38", nome: "Whey Isolado Vitafor", qtd: "1 Pote (900g)" },
+                    { id: "c38", nome: "Whey Isolado Vitafor", qtd: "1 Pote" },
                     { id: "c39", nome: "Psyllium", qtd: "250g" },
-                    { id: "c40", nome: "Creatina", qtd: "1 Pote (250g)" },
+                    { id: "c40", nome: "Creatina", qtd: "1 Pote" },
                     { id: "c41", nome: "Multivitamínico", qtd: "1 Frasco" },
                     { id: "c42", nome: "Ômega-3", qtd: "1 Frasco" },
-                    { id: "c43", nome: "Morosil (400mg)", qtd: "30 Cápsulas" }
+                    { id: "c43", nome: "Morosil (400-500mg)", qtd: "30 Cápsulas" }
                 ]
             }
         ];
 
         const META_CALORIAS = 1180;
-        const META_PROT = 120;
+        const META_PROT = 122;
         const META_CARB = 100;
         const META_GORD = 33;
         
-        const STORAGE_KEY_DIARIO = 'nutritrack_diario_v6';
-        const STORAGE_KEY_COMPRAS = 'nutritrack_compras_v6'; 
+        const STORAGE_KEY_DIARIO = 'nutritrack_diario_v7';
+        const STORAGE_KEY_COMPRAS = 'nutritrack_compras_v7'; 
         
         let diarioLog = JSON.parse(localStorage.getItem(STORAGE_KEY_DIARIO)) || [];
         let comprasEstado = JSON.parse(localStorage.getItem(STORAGE_KEY_COMPRAS)) || [];
@@ -427,10 +451,9 @@
             element.classList.replace('text-gray-400', 'text-emerald-600');
             element.querySelector('i').classList.replace('ph', 'ph-fill');
             
-            if(tabId === 'diario') renderizarGrafico(); // Renderiza gráfico ao abrir a aba
+            if(tabId === 'diario') renderizarGrafico(); 
         }
 
-        // --- ABA 1: CARDÁPIOS ---
         function renderizarCardapio() {
             const menuId = document.getElementById('seletorMenu').value;
             const refeicoes = menusData[menuId] || menusData["1"];
@@ -459,7 +482,6 @@
             `).join('');
         }
 
-        // --- ABA 2: DIÁRIO E MEMÓRIA ---
         function popularSeletorRefeicoes() {
             const seletor = document.getElementById('seletorRefeicaoRapida');
             let optionsHtml = '';
@@ -522,7 +544,7 @@
             const prot = parseInt(document.getElementById('inputProt').value) || 0;
             if(kcal <= 0) { alert("Insira uma caloria válida."); return; }
 
-            gravarNoLog(nome, kcal, prot, 0, 0); // simplificação pra avulsas
+            gravarNoLog(nome, kcal, prot, 0, 0);
             document.getElementById('areaAnalise').classList.add('hidden');
             document.getElementById('cameraInput').value = "";
             currentFotoDataUrl = null;
@@ -554,7 +576,6 @@
                 gTotal += l.gord || 0;
             });
             
-            // UI Header
             document.getElementById('caloriasAtuais').innerText = kcalTotal;
             document.getElementById('protAtual').innerText = pTotal;
             document.getElementById('carbAtual').innerText = cTotal;
@@ -564,7 +585,6 @@
             document.getElementById('barraProgresso').style.width = (percentual > 100 ? 100 : percentual) + '%';
             document.getElementById('barraProgresso').className = kcalTotal > META_CALORIAS ? "bg-red-400 h-3 rounded-full transition-all duration-500" : "bg-white h-3 rounded-full transition-all duration-500";
 
-            // UI List
             const container = document.getElementById('listaDiario');
             container.innerHTML = logsHoje.reverse().map(log => `
                 <div class="bg-white p-3 rounded-xl shadow-sm border border-gray-100 flex justify-between items-center">
@@ -595,8 +615,6 @@
 
         function renderizarGrafico() {
             const ctx = document.getElementById('graficoCalorias').getContext('2d');
-            
-            // Pega os ultimos 7 dias
             const labels = [];
             const dataSets = [];
             
@@ -610,9 +628,7 @@
                 dataSets.push(kcalDoDia);
             }
 
-            if(chartInstance) {
-                chartInstance.destroy();
-            }
+            if(chartInstance) chartInstance.destroy();
 
             chartInstance = new Chart(ctx, {
                 type: 'bar',
@@ -627,17 +643,12 @@
                 },
                 options: {
                     responsive: true,
-                    scales: {
-                        y: { beginAtZero: true, suggestedMax: 1300 }
-                    },
-                    plugins: {
-                        legend: { display: false }
-                    }
+                    scales: { y: { beginAtZero: true, suggestedMax: 1300 } },
+                    plugins: { legend: { display: false } }
                 }
             });
         }
 
-        // --- ABA 3: LISTA DE COMPRAS ---
         function renderizarListaCompras() {
             const catFiltro = document.getElementById('filtroCategoria').value;
             const statFiltro = document.getElementById('filtroStatus').value;
@@ -654,7 +665,7 @@
                     if(statFiltro === "Faltantes" && isChecked) return false;
                     if(statFiltro === "Comprados" && !isChecked) return false;
                     
-                    if(!isChecked) contador++; // Conta globamente o que falta baseado no filtro
+                    if(!isChecked) contador++;
                     return true;
                 });
 
@@ -699,7 +710,7 @@
                 comprasEstado = comprasEstado.filter(id => id !== itemId);
             }
             localStorage.setItem(STORAGE_KEY_COMPRAS, JSON.stringify(comprasEstado));
-            renderizarListaCompras(); // Atualiza a tela para recontar
+            renderizarListaCompras();
         }
 
         function limparListaCompras() {
@@ -710,7 +721,6 @@
             }
         }
 
-        // --- ABA 4: RELATÓRIOS ---
         function exportarCSV() {
             let csvContent = "Data,Hora,Refeicao,Calorias(Kcal),Prot(g),Carb(g),Gord(g)\n" + 
                 diarioLog.map(row => `${row.data},${row.hora},${row.nome.replace(/,/g, " ")},${row.calorias},${row.prot||0},${row.carb||0},${row.gord||0}`).join("\n");
