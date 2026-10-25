@@ -24,7 +24,7 @@
         input[type=number]::-webkit-inner-spin-button, input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
     </style>
 </head>
-<body class="text-gray-800 antialiased min-h-screen pb-10">
+<body class="text-gray-800 antialiased min-h-screen pb-24">
 
     <div class="max-w-md mx-auto bg-white min-h-screen relative shadow-2xl overflow-hidden flex flex-col">
         
@@ -33,7 +33,7 @@
             <div class="flex justify-between items-center mb-4">
                 <div>
                     <h1 class="text-2xl font-bold tracking-tight">Treino Pro</h1>
-                    <p class="text-fuchsia-100 text-sm opacity-90">Alta Intensidade & Recomposição</p>
+                    <p class="text-fuchsia-100 text-sm opacity-90">Hipertrofia & Metabólico</p>
                 </div>
                 <div class="w-12 h-12 rounded-full bg-white/20 backdrop-blur-md flex items-center justify-center border border-white/30">
                     <i class="ph-fill ph-barbell text-2xl text-white"></i>
@@ -62,12 +62,23 @@
         <main id="areaTreino" class="flex-1 px-4 py-6 space-y-6 overflow-y-auto">
             <!-- Renderizado via JavaScript -->
         </main>
+
+        <!-- Menu Inferior (Navegação) -->
+        <nav class="fixed bottom-0 w-full max-w-md bg-white/90 backdrop-blur-md border-t border-gray-200 flex justify-around items-center py-2.5 px-4 z-50 shadow-lg">
+            <a href="index.html" class="flex flex-col items-center text-purple-700 transition-colors">
+                <i class="ph-fill ph-barbell text-2xl mb-0.5"></i>
+                <span class="text-[10px] font-bold">Treinos</span>
+            </a>
+            <a href="medidas.html" class="flex flex-col items-center text-gray-400 hover:text-purple-700 transition-colors">
+                <i class="ph ph-user-focus text-2xl mb-0.5"></i>
+                <span class="text-[10px] font-semibold">Bioimpedância & Medidas</span>
+            </a>
+        </nav>
+
     </div>
 
     <script>
-        // Memória Interna para Cargas
         let cargasSalvas = JSON.parse(localStorage.getItem('fittrack_cargas_v1')) || {};
-        
         let timerIntervals = {};
         let stopwatches = {};
 
@@ -112,7 +123,6 @@
             let html = '';
             let animDelay = 0;
 
-            // Renderizar Aquecimento
             if (treino.aquecimento) {
                 const id = 'aq';
                 stopwatches[id] = { time: 0, interval: null, isRunning: false };
@@ -145,10 +155,8 @@
                 `;
             }
 
-            // Renderizar Blocos
             treino.blocos.forEach((bloco, bIndex) => {
                 animDelay += 0.1;
-                // Derivando cores do banco para o novo padrão
                 const baseColor = bloco.corBarra.split('-')[1]; 
                 const corFundo = `bg-${baseColor}-50`;
                 const corTexto = `text-${baseColor}-800`;
@@ -286,7 +294,6 @@
             container.innerHTML = html;
         }
 
-        // Helpers de UI para o Temporizador
         function gerarBarraDescanso(uniqueId, textClass, bgClass, tempoDescanso) {
             if(tempoDescanso <= 0) return '';
             return `
@@ -302,7 +309,6 @@
             `;
         }
 
-        // Lógica para Exercícios por Tempo (Abdominais Isométricos)
         function iniciarAtividade(uniqueId, tempo, textClass, bgClass) {
             const btnIniciar = document.getElementById(`btn_iniciar_${uniqueId}`);
             const container = document.getElementById(`active_timer_container_${uniqueId}`);
@@ -336,7 +342,6 @@
             }, 1000);
         }
 
-        // Lógica do Stopwatch (Aquecimento / Alongamento)
         function toggleStopwatch(id) {
             const sw = stopwatches[id];
             const btn = document.getElementById(`sw_btn_play_${id}`);
@@ -364,7 +369,6 @@
             document.getElementById(`sw_btn_play_${id}`).innerHTML = `<i class="ph-fill ph-play mr-2 text-emerald-500"></i> Iniciar`;
         }
 
-        // Lógica Global de Conclusão e Descanso
         function concluirEIniciarDescanso(uniqueId, textClass, bgClass, tempoDescanso) {
             const btn = document.getElementById(`btn_${uniqueId}`);
             const input = document.getElementById(`input_${uniqueId}`);
@@ -372,26 +376,22 @@
 
             if (btn.disabled) return;
             
-            // Pausar stopwatch se estiver rodando
             if(stopwatches[uniqueId] && stopwatches[uniqueId].isRunning) {
                 toggleStopwatch(uniqueId);
             }
 
-            // Oculta barra de atividade se clicar em concluído antes da isometria acabar
             const activeContainer = document.getElementById(`active_timer_container_${uniqueId}`);
             if (activeContainer) {
                 activeContainer.classList.add('hidden');
                 if (timerIntervals['active_'+uniqueId]) clearInterval(timerIntervals['active_'+uniqueId]);
             }
 
-            // UI do Botão
             btn.disabled = true;
             btn.className = `w-full ${bgClass} text-white font-bold py-2.5 px-4 rounded-xl shadow-inner cursor-not-allowed flex justify-center items-center ${input ? 'flex-1 h-[48px] mt-[18px]' : ''}`;
             btn.innerHTML = `<i class="ph-bold ph-check text-xl"></i>`;
 
             if(tempoDescanso <= 0) return;
 
-            // Setup Timer
             container.classList.remove('hidden');
             const text = document.getElementById(`timer_text_${uniqueId}`);
             const bar = document.getElementById(`timer_bar_${uniqueId}`);
