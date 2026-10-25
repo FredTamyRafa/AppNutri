@@ -4,254 +4,417 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Treino - FitTrack Pro</title>
+    <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Phosphor Icons -->
     <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <!-- Importando o Banco de Dados Separado -->
     <script src="treino_dados.js"></script>
     <style>
         ::-webkit-scrollbar { width: 0px; background: transparent; }
-        body { -webkit-tap-highlight-color: transparent; background-color: #faf5ff; }
-        .glass { background: rgba(255, 255, 255, 0.9); backdrop-filter: blur(10px); }
-        .progress-bar-anim { transition: width 1s linear; }
+        body { -webkit-tap-highlight-color: transparent; background-color: #f8fafc; font-family: 'Poppins', sans-serif; }
+        .glass-header { 
+            background: linear-gradient(135deg, #c026d3 0%, #7e22ce 100%);
+            box-shadow: 0 4px 20px rgba(192, 38, 211, 0.3);
+        }
+        .card-enter { animation: slideUp 0.4s ease-out forwards; opacity: 0; transform: translateY(20px); }
+        @keyframes slideUp { to { opacity: 1; transform: translateY(0); } }
+        input[type=number]::-webkit-inner-spin-button, input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
     </style>
 </head>
-<body class="text-gray-800 font-sans antialiased pb-10">
+<body class="text-gray-800 antialiased min-h-screen pb-10">
 
-    <div class="max-w-md mx-auto min-h-screen relative shadow-2xl overflow-x-hidden bg-white">
+    <div class="max-w-md mx-auto bg-white min-h-screen relative shadow-2xl overflow-hidden flex flex-col">
         
         <!-- Header -->
-        <header class="bg-purple-700 text-white p-5 rounded-b-3xl shadow-lg relative z-10">
-            <div class="flex justify-between items-center mb-3">
+        <header class="glass-header text-white p-6 rounded-b-3xl relative z-10">
+            <div class="flex justify-between items-center mb-4">
                 <div>
-                    <h1 class="text-2xl font-bold">FitTrack Pro</h1>
-                    <p class="text-purple-200 text-sm">Alta Intensidade & Recomposição</p>
+                    <h1 class="text-2xl font-bold tracking-tight">Treino Pro</h1>
+                    <p class="text-fuchsia-100 text-sm opacity-90">Alta Intensidade & Recomposição</p>
                 </div>
-                <i class="ph-fill ph-barbell text-4xl text-purple-300"></i>
+                <div class="w-12 h-12 rounded-full bg-white/20 backdrop-blur-md flex items-center justify-center border border-white/30">
+                    <i class="ph-fill ph-barbell text-2xl text-white"></i>
+                </div>
             </div>
             
-            <div class="bg-white/20 p-3 rounded-xl backdrop-blur-sm flex items-center justify-between mt-2">
-                <span class="text-sm font-medium">Dia do Treino:</span>
-                <select id="seletorDia" class="bg-white text-purple-900 text-sm font-bold rounded-lg p-2 outline-none shadow-sm" onchange="carregarTreinoDia()">
-                    <option value="1">Segunda-feira</option>
-                    <option value="2">Terça-feira</option>
-                    <option value="3">Quarta-feira</option>
-                    <option value="4">Quinta-feira</option>
-                    <option value="5">Sexta-feira</option>
-                </select>
+            <div class="mt-4 relative">
+                <label for="seletorDia" class="text-[10px] font-bold uppercase tracking-wider text-fuchsia-200 mb-1 block">Dia da Semana</label>
+                <div class="relative">
+                    <select id="seletorDia" onchange="carregarTreinoDia()" class="w-full bg-white/10 border border-white/30 text-white font-semibold text-lg rounded-xl focus:ring-2 focus:ring-white focus:border-white block p-3 outline-none appearance-none backdrop-blur-md">
+                        <option value="1" class="text-gray-800">Segunda-feira</option>
+                        <option value="2" class="text-gray-800">Terça-feira</option>
+                        <option value="3" class="text-gray-800">Quarta-feira</option>
+                        <option value="4" class="text-gray-800">Quinta-feira</option>
+                        <option value="5" class="text-gray-800">Sexta-feira</option>
+                    </select>
+                    <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-white">
+                        <i class="ph-bold ph-caret-down"></i>
+                    </div>
+                </div>
             </div>
-            <p id="focoTreino" class="text-center text-xs font-semibold mt-3 text-purple-100 uppercase tracking-widest"></p>
+            <p id="focoTreino" class="text-center text-xs font-semibold mt-4 text-fuchsia-100 uppercase tracking-widest"></p>
         </header>
 
         <!-- Corpo do Treino -->
-        <main id="areaTreino" class="p-4 space-y-5 mt-2">
+        <main id="areaTreino" class="flex-1 px-4 py-6 space-y-6 overflow-y-auto">
             <!-- Renderizado via JavaScript -->
         </main>
-
     </div>
 
     <script>
         // Memória Interna para Cargas
         let cargasSalvas = JSON.parse(localStorage.getItem('fittrack_cargas_v1')) || {};
+        
+        let timerIntervals = {};
+        let stopwatches = {};
 
         window.onload = () => {
-            // Identifica o dia da semana atual (1=Segunda ... 5=Sexta)
             let diaAtual = new Date().getDay(); 
-            if(diaAtual === 0 || diaAtual === 6) diaAtual = 1; // FDS puxa segunda-feira
+            if(diaAtual === 0 || diaAtual === 6) diaAtual = 1; 
             document.getElementById('seletorDia').value = diaAtual;
             carregarTreinoDia();
         };
 
+        function salvarCargaLocal(chave, valor) {
+            cargasSalvas[chave] = valor;
+            localStorage.setItem('fittrack_cargas_v1', JSON.stringify(cargasSalvas));
+        }
+
+        function getCarga(chave) {
+            return cargasSalvas[chave] || '';
+        }
+
+        function formatarTempo(segundosGlobais) {
+            const mins = Math.floor(segundosGlobais / 60);
+            const segs = segundosGlobais % 60;
+            return `${mins.toString().padStart(2, '0')}:${segs.toString().padStart(2, '0')}`;
+        }
+
+        function clearAllIntervals() {
+            for (let key in timerIntervals) clearInterval(timerIntervals[key]);
+            for (let key in stopwatches) {
+                if (stopwatches[key].interval) clearInterval(stopwatches[key].interval);
+            }
+            timerIntervals = {};
+            stopwatches = {};
+        }
+
         function carregarTreinoDia() {
+            clearAllIntervals();
             const diaId = document.getElementById('seletorDia').value;
-            const treino = treinoSemana[diaId]; // Puxa do arquivo treino_dados.js
+            const treino = treinoSemana[diaId]; 
             document.getElementById('focoTreino').innerText = treino.foco;
             
-            const area = document.getElementById('areaTreino');
+            const container = document.getElementById('areaTreino');
             let html = '';
+            let animDelay = 0;
 
-            // Renderizar Aquecimento com Cronômetro Ativo
-            html += `
-                <div class="bg-orange-50 border border-orange-200 rounded-2xl p-4 shadow-sm">
-                    <h3 class="font-bold text-orange-800 mb-1 flex items-center"><i class="ph-fill ph-fire mr-2"></i> Aquecimento</h3>
-                    <p class="text-sm text-gray-700 mb-3">${treino.aquecimento.nome} (${treino.aquecimento.tempo} min)</p>
-                    
-                    <div id="containerTimer_aq" class="flex flex-col mb-2">
-                        <button onclick="iniciarCronometroAtivo('aq', ${treino.aquecimento.tempo * 60}, 'bg-orange-500')" class="w-full bg-orange-200 text-orange-800 font-bold py-2 rounded-lg flex items-center justify-center mb-2">
-                            <i class="ph-fill ph-play mr-2"></i> Iniciar ${treino.aquecimento.tempo} min
+            // Renderizar Aquecimento
+            if (treino.aquecimento) {
+                const id = 'aq';
+                stopwatches[id] = { time: 0, interval: null, isRunning: false };
+                html += `
+                    <div class="bg-orange-50 rounded-3xl p-5 shadow-sm border border-black/5 card-enter" style="animation-delay: ${animDelay}s">
+                        <h2 class="font-bold text-xl text-orange-700 mb-1 flex items-center">
+                            <i class="ph-fill ph-fire text-2xl mr-2"></i> Aquecimento
+                        </h2>
+                        <p class="text-sm text-gray-600 mb-4">${treino.aquecimento.nome} (${treino.aquecimento.tempo} min)</p>
+                        
+                        <div class="bg-white/60 rounded-2xl p-4 text-center border border-white mb-4 shadow-inner">
+                            <div id="sw_display_${id}" class="text-5xl font-black text-orange-700 tracking-widest font-mono">00:00</div>
+                        </div>
+
+                        <div class="flex gap-2 mb-4">
+                            <button id="sw_btn_play_${id}" onclick="toggleStopwatch('${id}')" class="flex-1 bg-white border border-gray-200 text-gray-700 font-bold py-3 rounded-xl shadow-sm hover:bg-gray-50 flex items-center justify-center transition-colors">
+                                <i class="ph-fill ph-play mr-2 text-emerald-500"></i> Iniciar
+                            </button>
+                            <button onclick="resetStopwatch('${id}')" class="px-4 bg-white border border-gray-200 text-gray-500 font-bold py-3 rounded-xl shadow-sm hover:bg-gray-50 flex items-center justify-center transition-colors">
+                                <i class="ph-bold ph-arrow-counter-clockwise"></i>
+                            </button>
+                        </div>
+
+                        <button id="btn_${id}" onclick="concluirEIniciarDescanso('${id}', 'text-orange-700', 'bg-orange-500', 40)" class="w-full bg-gray-800 text-white font-bold py-3 rounded-xl shadow-md transition-all flex justify-center items-center">
+                            <i class="ph-bold ph-check-circle mr-2 text-lg"></i> Concluído
                         </button>
-                        <div class="w-full bg-gray-200 rounded-full h-2 overflow-hidden hidden" id="barraBg_aq">
-                            <div id="barra_aq" class="bg-orange-500 h-2 progress-bar-anim" style="width: 100%"></div>
-                        </div>
-                        <p id="textoTimer_aq" class="text-center text-xs font-bold mt-1 text-gray-500 hidden"></p>
+                        
+                        ${gerarBarraDescanso(id, 'text-orange-700', 'bg-orange-500', 40)}
                     </div>
+                `;
+            }
+
+            // Renderizar Blocos
+            treino.blocos.forEach((bloco, bIndex) => {
+                animDelay += 0.1;
+                // Derivando cores do banco para o novo padrão
+                const baseColor = bloco.corBarra.split('-')[1]; 
+                const corFundo = `bg-${baseColor}-50`;
+                const corTexto = `text-${baseColor}-800`;
+                const corTag = `bg-${baseColor}-200`;
+                const corBarra = bloco.corBarra;
+
+                if (bloco.tipo === "biset") {
+                    let htmlBiset = `
+                        <div class="${corFundo} rounded-3xl p-5 shadow-sm border border-black/5 card-enter" style="animation-delay: ${animDelay}s">
+                            <h2 class="font-bold text-xl ${corTexto} mb-4 flex items-center border-b border-black/5 pb-3">
+                                <i class="ph-fill ph-lightning text-2xl mr-2"></i> ${bloco.titulo}
+                            </h2>
+                    `;
+
+                    bloco.series.forEach((serie, sIndex) => {
+                        const uniqueId = `b${bIndex}_s${sIndex}`;
+                        const chaveCarga = `${treino.diaNome}_${bloco.titulo}_${serie.reps}_${serie.ex1}`;
+                        const cargaSalva = getCarga(chaveCarga);
+                        
+                        htmlBiset += `
+                            <div class="mb-5 pb-5 border-b border-black/5 last:border-0 last:pb-0 last:mb-0">
+                                <div class="text-[13px] font-semibold text-gray-700 mb-3 bg-white/60 p-3 rounded-xl border border-white shadow-sm">
+                                    <span class="${corTexto} font-bold ${corTag} bg-opacity-30 px-2 py-0.5 rounded mr-1">${sIndex+1}ª Série</span> 
+                                    ${serie.ex1} <span class="${corTexto}">(${serie.reps} rep)</span> <span class="${corTexto} font-black mx-1">+</span> ${serie.ex2}
+                                </div>
+                                
+                                <div class="flex items-center gap-3">
+                                    <div class="w-24">
+                                        <label class="text-[10px] uppercase font-bold text-gray-500 block mb-1 text-center">Carga (Kg)</label>
+                                        <input type="number" id="input_${uniqueId}" value="${cargaSalva}" onchange="salvarCargaLocal('${chaveCarga}', this.value)" placeholder="--" class="w-full bg-white border-2 border-transparent focus:border-gray-300 text-gray-800 font-black text-center rounded-xl p-2.5 outline-none transition-all shadow-sm">
+                                    </div>
+                                    <button id="btn_${uniqueId}" onclick="concluirEIniciarDescanso('${uniqueId}', '${corTexto}', '${corBarra}', ${serie.descanso})" class="flex-1 bg-gray-800 hover:bg-gray-900 text-white font-bold py-2.5 px-4 rounded-xl shadow-md transition-colors flex justify-center items-center h-[48px] mt-[18px]">
+                                        <i class="ph-bold ph-check-circle mr-2 text-lg"></i> Concluído
+                                    </button>
+                                </div>
+                                ${gerarBarraDescanso(uniqueId, corTexto, corBarra, serie.descanso)}
+                            </div>
+                        `;
+                    });
+
+                    htmlBiset += `</div>`;
+                    html += htmlBiset;
+                }
+                else if (bloco.tipo === "abdomen") {
+                    let htmlAbs = `
+                        <div class="${corFundo} rounded-3xl p-5 shadow-sm border border-black/5 card-enter" style="animation-delay: ${animDelay}s">
+                            <h2 class="font-bold text-xl ${corTexto} mb-4 flex items-center border-b border-black/5 pb-3">
+                                <i class="ph-fill ph-target text-2xl mr-2"></i> ${bloco.titulo}
+                            </h2>
+                    `;
+
+                    bloco.series.forEach((serie, sIndex) => {
+                        const uniqueId = `b${bIndex}_s${sIndex}`;
+                        const chaveCarga = `${treino.diaNome}_${bloco.titulo}_${sIndex}`;
+                        const cargaSalva = getCarga(chaveCarga);
+                        const isTempo = serie.reps.includes('s') || serie.reps.includes('seg');
+                        const tempoAtividade = isTempo ? parseInt(serie.reps.replace(/\D/g,'')) : 0;
+
+                        htmlAbs += `
+                            <div class="mb-4 pb-4 border-b border-black/5 last:border-0 last:pb-0 last:mb-0">
+                                <div class="text-[13px] font-semibold text-gray-700 mb-2 bg-white/60 p-2.5 rounded-xl border border-white shadow-sm flex justify-between items-center">
+                                    <span><span class="${corTexto} font-bold ${corTag} bg-opacity-30 px-2 py-0.5 rounded mr-1">${sIndex+1}ª Série</span> ${serie.ex1}</span>
+                                    <span class="${corTexto} font-bold bg-white px-2 py-0.5 rounded shadow-sm">${serie.reps}</span>
+                                </div>
+                                
+                                <div class="flex items-center gap-3 mt-2">
+                                    ${isTempo ? `
+                                        <button id="btn_iniciar_${uniqueId}" onclick="iniciarAtividade('${uniqueId}', ${tempoAtividade}, '${corTexto}', '${corBarra}')" class="flex-1 bg-white border border-gray-200 text-gray-700 font-bold py-2.5 px-2 rounded-xl shadow-sm hover:bg-gray-50 flex justify-center items-center h-[42px] text-sm transition-colors">
+                                            <i class="ph-fill ph-play mr-1 text-emerald-500"></i> Iniciar
+                                        </button>
+                                    ` : `
+                                        <div class="w-20">
+                                            <input type="number" id="input_${uniqueId}" value="${cargaSalva}" onchange="salvarCargaLocal('${chaveCarga}', this.value)" placeholder="Kg" class="w-full bg-white border border-transparent focus:border-gray-300 text-gray-800 font-bold text-center rounded-xl p-2.5 outline-none shadow-sm text-sm">
+                                        </div>
+                                    `}
+                                    <button id="btn_${uniqueId}" onclick="concluirEIniciarDescanso('${uniqueId}', '${corTexto}', '${corBarra}', ${serie.descanso})" class="flex-1 bg-gray-800 hover:bg-gray-900 text-white font-bold py-2.5 px-4 rounded-xl shadow-md transition-colors flex justify-center items-center h-[42px]">
+                                        Concluído
+                                    </button>
+                                </div>
+                                
+                                ${isTempo ? `
+                                <div id="active_timer_container_${uniqueId}" class="hidden mt-3 bg-white/80 p-2.5 rounded-xl border border-white shadow-sm">
+                                    <div class="flex justify-between items-center mb-1.5">
+                                        <span class="text-[11px] font-bold text-gray-600 flex items-center"><i class="ph-fill ph-person-simple-run animate-pulse mr-1 ${corTexto}"></i> Executando</span>
+                                        <span id="active_timer_text_${uniqueId}" class="text-xs font-black ${corTexto}">${tempoAtividade}s</span>
+                                    </div>
+                                    <div class="w-full bg-gray-200 rounded-full h-1.5 overflow-hidden">
+                                        <div id="active_timer_bar_${uniqueId}" class="${corBarra} h-1.5 rounded-full" style="width: 100%; transition: width 1s linear;"></div>
+                                    </div>
+                                </div>
+                                ` : ''}
+
+                                ${gerarBarraDescanso(uniqueId, corTexto, corBarra, serie.descanso)}
+                            </div>
+                        `;
+                    });
                     
-                    <button onclick="dispararDescanso('aq_descanso', 40)" class="w-full bg-orange-500 text-white font-bold py-2 rounded-lg mt-2 active:bg-orange-600 transition">
-                        Aquecimento Concluído
-                    </button>
+                    htmlAbs += `</div>`;
+                    html += htmlAbs;
+                }
+                else if (bloco.tipo === "alongamento") {
+                    const id = `along_${bIndex}`;
+                    stopwatches[id] = { time: 0, interval: null, isRunning: false };
                     
-                    <div id="containerDescanso_aq_descanso" class="mt-3 hidden">
-                        <p class="text-[10px] uppercase font-bold text-gray-500 mb-1 text-center">Tempo de Descanso</p>
-                        <div class="w-full bg-gray-200 rounded-full h-3">
-                            <div id="barraDescanso_aq_descanso" class="bg-purple-500 h-3 rounded-full progress-bar-anim" style="width: 100%"></div>
+                    html += `
+                        <div class="${corFundo} rounded-3xl p-5 shadow-sm border border-black/5 card-enter" style="animation-delay: ${animDelay}s">
+                            <h2 class="font-bold text-xl ${corTexto} mb-1 flex items-center">
+                                <i class="ph-fill ph-person-simple-stretch text-2xl mr-2"></i> ${bloco.titulo}
+                            </h2>
+                            <p class="text-sm text-gray-600 mb-4">${bloco.series[0].ex1} (${bloco.series[0].reps})</p>
+                            
+                            <div class="bg-white/60 rounded-2xl p-4 text-center border border-white mb-4 shadow-inner">
+                                <div id="sw_display_${id}" class="text-5xl font-black ${corTexto} tracking-widest font-mono">00:00</div>
+                            </div>
+
+                            <div class="flex gap-2 mb-4">
+                                <button id="sw_btn_play_${id}" onclick="toggleStopwatch('${id}')" class="flex-1 bg-white border border-gray-200 text-gray-700 font-bold py-3 rounded-xl shadow-sm hover:bg-gray-50 flex items-center justify-center transition-colors">
+                                    <i class="ph-fill ph-play mr-2 text-emerald-500"></i> Iniciar
+                                </button>
+                                <button onclick="resetStopwatch('${id}')" class="px-4 bg-white border border-gray-200 text-gray-500 font-bold py-3 rounded-xl shadow-sm hover:bg-gray-50 flex items-center justify-center transition-colors">
+                                    <i class="ph-bold ph-arrow-counter-clockwise"></i>
+                                </button>
+                            </div>
+
+                            <button id="btn_${id}" onclick="concluirEIniciarDescanso('${id}', '${corTexto}', '${corBarra}', ${bloco.series[0].descanso})" class="w-full bg-gray-800 text-white font-bold py-3 rounded-xl shadow-md transition-all flex justify-center items-center">
+                                <i class="ph-bold ph-check-circle mr-2 text-lg"></i> Finalizado
+                            </button>
+                            
+                            ${gerarBarraDescanso(id, corTexto, corBarra, bloco.series[0].descanso)}
                         </div>
-                        <p id="textoDescanso_aq_descanso" class="text-center text-sm font-black mt-1 text-purple-700">40s</p>
+                    `;
+                }
+            });
+
+            container.innerHTML = html;
+        }
+
+        // Helpers de UI para o Temporizador
+        function gerarBarraDescanso(uniqueId, textClass, bgClass, tempoDescanso) {
+            if(tempoDescanso <= 0) return '';
+            return `
+                <div id="timer_container_${uniqueId}" class="hidden mt-4 bg-white/80 p-3 rounded-xl border border-white shadow-sm">
+                    <div class="flex justify-between items-center mb-2">
+                        <span class="text-xs font-bold text-gray-600 flex items-center"><i class="ph-bold ph-hourglass-high animate-pulse mr-1 ${textClass}"></i> Descanso</span>
+                        <span id="timer_text_${uniqueId}" class="text-sm font-black ${textClass}">${tempoDescanso}s</span>
+                    </div>
+                    <div class="w-full bg-gray-200 rounded-full h-2 overflow-hidden">
+                        <div id="timer_bar_${uniqueId}" class="${bgClass} h-2 rounded-full" style="width: 100%; transition: width 1s linear;"></div>
                     </div>
                 </div>
             `;
-
-            // Renderizar Blocos (Bi-sets, Abdômen, Alongamento)
-            treino.blocos.forEach((bloco, bIndex) => {
-                html += `<div class="${bloco.corFundo} border rounded-2xl p-4 shadow-sm">
-                            <h3 class="font-bold text-gray-800 mb-3 text-lg">${bloco.titulo}</h3>
-                            <div class="space-y-4">`;
-                
-                bloco.series.forEach((serie, sIndex) => {
-                    const isTempo = serie.reps.includes('s') || serie.reps.includes('m');
-                    const refId = `b${bIndex}_s${sIndex}`;
-                    const chaveCarga = `${treino.diaNome}_${bloco.titulo}_${serie.reps}_${serie.ex1}`;
-                    const cargaSalva = cargasSalvas[chaveCarga] || '';
-
-                    html += `<div class="bg-white p-3 rounded-xl shadow-sm border border-gray-100 relative">`;
-                    
-                    if(bloco.tipo === "biset") {
-                        html += `<p class="text-sm font-bold text-gray-800 mb-1">${serie.ex1} <span class="text-purple-600">(${serie.reps} rep)</span></p>
-                                 <p class="text-xs text-gray-500 mb-3">+ ${serie.ex2}</p>`;
-                    } else {
-                        html += `<p class="text-sm font-bold text-gray-800 mb-1">${serie.ex1}</p>
-                                 <p class="text-xs text-purple-600 font-bold mb-3">${serie.reps} ${isTempo ? '' : 'repetições'}</p>`;
-                    }
-
-                    // Se for exercício por tempo (Isometrias, Pranchas, Alongamento) - Botão Iniciar
-                    if(isTempo) {
-                        let tempoSegundos = serie.reps.includes('m') ? parseInt(serie.reps)*60 : parseInt(serie.reps);
-                        html += `
-                            <div id="containerTimer_${refId}" class="flex flex-col mb-3">
-                                <button onclick="iniciarCronometroAtivo('${refId}', ${tempoSegundos}, '${bloco.corBarra}')" class="w-full bg-gray-100 text-gray-700 font-bold py-2 rounded-lg border border-gray-200 flex items-center justify-center mb-2">
-                                    <i class="ph-fill ph-timer mr-2"></i> Iniciar Temporizador
-                                </button>
-                                <div class="w-full bg-gray-200 rounded-full h-2 overflow-hidden hidden" id="barraBg_${refId}">
-                                    <div id="barra_${refId}" class="${bloco.corBarra} h-2 progress-bar-anim" style="width: 100%"></div>
-                                </div>
-                                <p id="textoTimer_${refId}" class="text-center text-xs font-bold mt-1 text-gray-500 hidden"></p>
-                            </div>
-                        `;
-                    } 
-                    // Se for repetição normal (Bi-set) - Campo de Carga
-                    else {
-                        html += `
-                            <div class="flex items-center space-x-2 mb-3">
-                                <div class="w-1/2">
-                                    <label class="text-[10px] uppercase font-bold text-gray-400">Carga (Kg)</label>
-                                    <input type="number" id="carga_${refId}" value="${cargaSalva}" placeholder="Ex: 20" class="w-full bg-gray-50 border border-gray-200 text-center rounded-lg py-2 font-bold focus:outline-none focus:border-purple-400 text-gray-700">
-                                </div>
-                            </div>
-                        `;
-                    }
-
-                    // Botão Concluído (Gatilho de Descanso)
-                    if(serie.descanso > 0) {
-                        html += `
-                            <button id="btn_${refId}" onclick="concluirSerie('${refId}', ${serie.descanso}, '${chaveCarga}', ${!isTempo})" class="w-full bg-gray-800 text-white text-sm font-bold py-2.5 rounded-lg active:bg-gray-600 transition flex justify-center items-center">
-                                <i class="ph-bold ph-check mr-2"></i> Concluído
-                            </button>
-                            
-                            <!-- Área da Barra de Descanso -->
-                            <div id="containerDescanso_${refId}" class="mt-3 hidden">
-                                <p class="text-[10px] uppercase font-bold text-gray-500 mb-1 text-center">Tempo de Descanso</p>
-                                <div class="w-full bg-gray-200 rounded-full h-3">
-                                    <div id="barraDescanso_${refId}" class="${bloco.corBarra} h-3 rounded-full progress-bar-anim" style="width: 100%"></div>
-                                </div>
-                                <p id="textoDescanso_${refId}" class="text-center text-sm font-black mt-1 text-gray-700">${serie.descanso}s</p>
-                            </div>
-                        `;
-                    } else {
-                        // Sem descanso (ex: fim do alongamento)
-                         html += `
-                            <button class="w-full bg-indigo-500 text-white text-sm font-bold py-2.5 rounded-lg">
-                                Finalizado
-                            </button>`;
-                    }
-
-                    html += `</div>`; // Fechar bg-white
-                });
-                
-                html += `</div></div>`; // Fechar corFundo
-            });
-
-            area.innerHTML = html;
         }
 
-        // Motor do Cronômetro de Atividade (Isometria/Pranchas)
-        function iniciarCronometroAtivo(id, tempoTotal, corClasse) {
-            const btn = document.querySelector(`#containerTimer_${id} button`);
-            const barraBg = document.getElementById(`barraBg_${id}`);
-            const barra = document.getElementById(`barra_${id}`);
-            const texto = document.getElementById(`textoTimer_${id}`);
-            
-            btn.classList.add('hidden');
-            barraBg.classList.remove('hidden');
-            texto.classList.remove('hidden');
-            
-            let tempoAtual = tempoTotal;
-            barra.className = `${corClasse} h-2 progress-bar-anim`;
-            
-            texto.innerText = `${tempoAtual}s restantes`;
-            
-            const intervalo = setInterval(() => {
-                tempoAtual--;
-                let porcentagem = (tempoAtual / tempoTotal) * 100;
-                barra.style.width = `${porcentagem}%`;
-                texto.innerText = `${tempoAtual}s restantes`;
-                
-                if(tempoAtual <= 0) {
-                    clearInterval(intervalo);
-                    texto.innerText = "Tempo Esgotado!";
-                    texto.classList.replace('text-gray-500', 'text-green-600');
-                    if(navigator.vibrate) navigator.vibrate(200); // Vibra celular se suportado
+        // Lógica para Exercícios por Tempo (Abdominais Isométricos)
+        function iniciarAtividade(uniqueId, tempo, textClass, bgClass) {
+            const btnIniciar = document.getElementById(`btn_iniciar_${uniqueId}`);
+            const container = document.getElementById(`active_timer_container_${uniqueId}`);
+            const text = document.getElementById(`active_timer_text_${uniqueId}`);
+            const bar = document.getElementById(`active_timer_bar_${uniqueId}`);
+
+            btnIniciar.disabled = true;
+            btnIniciar.classList.add('opacity-50', 'cursor-not-allowed');
+            btnIniciar.innerHTML = `<i class="ph-fill ph-spinner-gap animate-spin mr-1"></i> Rodando...`;
+
+            container.classList.remove('hidden');
+            let tempoRestante = tempo;
+
+            if (timerIntervals['active_'+uniqueId]) clearInterval(timerIntervals['active_'+uniqueId]);
+
+            bar.style.transition = 'none';
+            bar.style.width = '100%';
+            setTimeout(() => { bar.style.transition = 'width 1s linear'; }, 50);
+
+            timerIntervals['active_'+uniqueId] = setInterval(() => {
+                tempoRestante--;
+                text.innerText = `${tempoRestante}s`;
+                bar.style.width = `${(tempoRestante / tempo) * 100}%`;
+
+                if (tempoRestante <= 0) {
+                    clearInterval(timerIntervals['active_'+uniqueId]);
+                    text.innerText = "Finalizado!";
+                    btnIniciar.innerHTML = `<i class="ph-bold ph-check text-emerald-500 mr-1"></i> Fim`;
+                    if (navigator.vibrate) navigator.vibrate([150, 100, 150]);
                 }
             }, 1000);
         }
 
-        // Salvar Carga e Disparar Cronômetro de Descanso
-        function concluirSerie(id, tempoDescanso, chaveCarga, salvarCarga) {
-            // Salvar no LocalStorage se houver campo de peso
-            if(salvarCarga) {
-                const cargaInput = document.getElementById(`carga_${id}`).value;
-                if(cargaInput) {
-                    cargasSalvas[chaveCarga] = cargaInput;
-                    localStorage.setItem('fittrack_cargas_v1', JSON.stringify(cargasSalvas));
-                }
+        // Lógica do Stopwatch (Aquecimento / Alongamento)
+        function toggleStopwatch(id) {
+            const sw = stopwatches[id];
+            const btn = document.getElementById(`sw_btn_play_${id}`);
+            
+            if (sw.isRunning) {
+                clearInterval(sw.interval);
+                sw.isRunning = false;
+                btn.innerHTML = `<i class="ph-fill ph-play mr-2 text-emerald-500"></i> Retomar`;
+            } else {
+                sw.isRunning = true;
+                btn.innerHTML = `<i class="ph-fill ph-pause mr-2 text-orange-500"></i> Pausar`;
+                sw.interval = setInterval(() => {
+                    sw.time++;
+                    document.getElementById(`sw_display_${id}`).innerText = formatarTempo(sw.time);
+                }, 1000);
             }
-
-            const btn = document.getElementById(`btn_${id}`);
-            btn.classList.replace('bg-gray-800', 'bg-green-500');
-            btn.innerHTML = `<i class="ph-bold ph-check-circle mr-2"></i> Feito!`;
-            btn.disabled = true;
-
-            dispararDescanso(id, tempoDescanso);
         }
 
-        function dispararDescanso(id, tempoTotal) {
-            const container = document.getElementById(`containerDescanso_${id}`);
-            const barra = document.getElementById(`barraDescanso_${id}`);
-            const texto = document.getElementById(`textoDescanso_${id}`);
+        function resetStopwatch(id) {
+            const sw = stopwatches[id];
+            clearInterval(sw.interval);
+            sw.time = 0;
+            sw.isRunning = false;
+            document.getElementById(`sw_display_${id}`).innerText = "00:00";
+            document.getElementById(`sw_btn_play_${id}`).innerHTML = `<i class="ph-fill ph-play mr-2 text-emerald-500"></i> Iniciar`;
+        }
+
+        // Lógica Global de Conclusão e Descanso
+        function concluirEIniciarDescanso(uniqueId, textClass, bgClass, tempoDescanso) {
+            const btn = document.getElementById(`btn_${uniqueId}`);
+            const input = document.getElementById(`input_${uniqueId}`);
+            const container = document.getElementById(`timer_container_${uniqueId}`);
+
+            if (btn.disabled) return;
             
+            // Pausar stopwatch se estiver rodando
+            if(stopwatches[uniqueId] && stopwatches[uniqueId].isRunning) {
+                toggleStopwatch(uniqueId);
+            }
+
+            // Oculta barra de atividade se clicar em concluído antes da isometria acabar
+            const activeContainer = document.getElementById(`active_timer_container_${uniqueId}`);
+            if (activeContainer) {
+                activeContainer.classList.add('hidden');
+                if (timerIntervals['active_'+uniqueId]) clearInterval(timerIntervals['active_'+uniqueId]);
+            }
+
+            // UI do Botão
+            btn.disabled = true;
+            btn.className = `w-full ${bgClass} text-white font-bold py-2.5 px-4 rounded-xl shadow-inner cursor-not-allowed flex justify-center items-center ${input ? 'flex-1 h-[48px] mt-[18px]' : ''}`;
+            btn.innerHTML = `<i class="ph-bold ph-check text-xl"></i>`;
+
+            if(tempoDescanso <= 0) return;
+
+            // Setup Timer
             container.classList.remove('hidden');
+            const text = document.getElementById(`timer_text_${uniqueId}`);
+            const bar = document.getElementById(`timer_bar_${uniqueId}`);
             
-            let tempoAtual = tempoTotal;
-            texto.innerText = `${tempoAtual}s`;
+            let tempoRestante = tempoDescanso;
             
-            const intervalo = setInterval(() => {
-                tempoAtual--;
-                let porcentagem = (tempoAtual / tempoTotal) * 100;
-                barra.style.width = `${porcentagem}%`;
-                texto.innerText = `${tempoAtual}s`;
-                
-                if(tempoAtual <= 0) {
-                    clearInterval(intervalo);
-                    texto.innerText = "Preparar!";
-                    texto.classList.add('text-green-600');
-                    if(navigator.vibrate) navigator.vibrate([300, 100, 300]); 
+            if (timerIntervals[uniqueId]) clearInterval(timerIntervals[uniqueId]);
+
+            bar.style.transition = 'none';
+            bar.style.width = '100%';
+            setTimeout(() => { bar.style.transition = 'width 1s linear'; }, 50);
+
+            timerIntervals[uniqueId] = setInterval(() => {
+                tempoRestante--;
+                text.innerText = `${tempoRestante}s`;
+                bar.style.width = `${(tempoRestante / tempoDescanso) * 100}%`;
+
+                if (tempoRestante <= 0) {
+                    clearInterval(timerIntervals[uniqueId]);
+                    text.innerText = "Pronto!";
+                    text.classList.replace(textClass, 'text-emerald-600');
+                    bar.classList.replace(bgClass, 'bg-emerald-500');
+                    if (navigator.vibrate) navigator.vibrate([200, 100, 200]);
                 }
             }, 1000);
         }
