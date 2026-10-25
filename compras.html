@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>NutriTrack - Compras</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    <script src="dados.js"></script>
+    <style>
+        .check-item { transition: all 0.2s ease; }
+        .check-item input:checked ~ .check-box { background-color: #10b981; border-color: #10b981; }
+        .check-item input:checked ~ .check-box i { opacity: 1; }
+        .check-item input:checked ~ .content-box span.nome-item { text-decoration: line-through; color: #9ca3af; }
+    </style>
+</head>
+<body class="bg-gray-100 text-gray-800 font-sans antialiased pb-20">
+    <div class="max-w-md mx-auto bg-gray-50 min-h-screen relative shadow-2xl overflow-x-hidden">
+        
+        <header class="bg-emerald-600 text-white p-5 rounded-b-3xl shadow-lg relative z-10">
+            <div class="flex justify-between items-center">
+                <div>
+                    <h1 class="text-2xl font-bold">NutriTrack V8</h1>
+                    <p class="text-emerald-100 text-sm">Metabolismo Acelerado (1350 kcal)</p>
+                </div>
+                <div class="w-12 h-12 rounded-full bg-white text-emerald-600 flex items-center justify-center shadow-inner">
+                    <i class="ph-fill ph-shopping-cart text-3xl"></i>
+                </div>
+            </div>
+        </header>
+
+        <main class="p-4">
+            <h2 class="text-xl font-bold text-gray-800 mb-1">Lista de Compras Dinâmica</h2>
+            <div class="bg-white p-4 rounded-xl shadow-sm border border-gray-100 mb-4 space-y-3">
+                <div class="flex space-x-2">
+                    <select id="filtroCicloCompras" onchange="onFiltroCicloMudou()" class="w-1/2 p-2 bg-gray-50 border border-gray-200 rounded-lg text-xs focus:ring-emerald-500 text-gray-700 outline-none">
+                        <option value="ciclo2" selected>Ciclo 2: Queima</option>
+                        <option value="ciclo1">Ciclo 1: Adaptação</option>
+                    </select>
+                    <select id="filtroMenuCompras" onchange="onFiltroMenuMudou()" class="w-1/2 p-2 bg-gray-50 border border-gray-200 rounded-lg text-xs focus:ring-emerald-500 text-gray-700 outline-none">
+                        <!-- Preenchido via JavaScript -->
+                    </select>
+                </div>
+            </div>
+
+            <div class="bg-emerald-50 border border-emerald-100 rounded-xl p-3 mb-6 flex justify-between items-center">
+                <span class="text-sm font-bold text-emerald-800">Itens Faltantes (neste filtro):</span>
+                <span id="contadorFaltantes" class="text-2xl font-black text-emerald-600">0</span>
+            </div>
+            
+            <div class="flex justify-end mb-4">
+                <button onclick="limparListaCompras()" class="text-xs text-red-500 font-medium px-3 py-1.5 bg-white border border-red-100 rounded-lg shadow-sm active:scale-95">Limpar Checks</button>
+            </div>
+            
+            <div id="containerListaCompras" class="space-y-4 pb-6"></div>
+        </main>
+
+        <nav class="fixed bottom-0 w-full max-w-md bg-white/90 backdrop-blur-md border-t border-gray-200 flex justify-between items-center pb-safe pt-2 pb-2 px-1 z-50">
+            <a href="index.html" class="flex flex-col items-center p-2 text-gray-400 hover:text-emerald-600 w-1/4 transition-colors">
+                <i class="ph ph-fork-knife text-2xl mb-1"></i><span class="text-[10px] font-semibold">Cardápios</span>
+            </a>
+            <a href="memoria.html" class="flex flex-col items-center p-2 text-gray-400 hover:text-emerald-600 w-1/4 transition-colors">
+                <i class="ph ph-notebook text-2xl mb-1"></i><span class="text-[10px] font-semibold">Memória</span>
+            </a>
+            <a href="compras.html" class="flex flex-col items-center p-2 text-emerald-600 w-1/4 transition-colors">
+                <i class="ph-fill ph-shopping-cart text-2xl mb-1"></i><span class="text-[10px] font-semibold">Compras</span>
+            </a>
+            <a href="planilha.html" class="flex flex-col items-center p-2 text-gray-400 hover:text-emerald-600 w-1/4 transition-colors">
+                <i class="ph ph-chart-line-up text-2xl mb-1"></i><span class="text-[10px] font-semibold">Planilha</span>
+            </a>
+        </nav>
+    </div>
+
+    <script>
+        window.multiplicadoresCompras = {};
+
+        window.onload = () => {
+            atualizarSeletorMenuCompras();
+        };
+
+        function onFiltroCicloMudou() {
+            window.multiplicadoresCompras = {}; 
+            atualizarSeletorMenuCompras();
+        }
+
+        function onFiltroMenuMudou() {
+            renderizarListaCompras();
+        }
+
+        function atualizarSeletorMenuCompras() {
+            const cicloId = document.getElementById('filtroCicloCompras').value;
+            const seletorMenu = document.getElementById('filtroMenuCompras');
+            
+            let optionsHtml = '<option value="Todos">Todos os Menus</option>';
+            if(ciclosData[cicloId]) {
+                ciclosData[cicloId].forEach(menu => {
+                    optionsHtml += `<option value="${menu.value}">${menu.text}</option>`;
+                });
+            }
+            seletorMenu.innerHTML = optionsHtml;
+            
+            renderizarListaCompras();
+        }
+
+        function alterarQtdItem(id, delta) {
+            if (window.multiplicadoresCompras[id] !== undefined) {
+                if (window.multiplicadoresCompras[id] + delta >= 1) { 
+                    window.multiplicadoresCompras[id] += delta;
+                    renderizarListaCompras();
+                }
+            }
+        }
+
+        function extrairIngredientesBrutos() {
+            const cicloId = document.getElementById('filtroCicloCompras').value;
+            const menuFiltro = document.getElementById('filtroMenuCompras').value;
+            const isTodos = (menuFiltro === "Todos");
+            
+            const menusDoCiclo = ciclosData[cicloId].map(m => m.value);
+            let menusParaProcessar = isTodos ? menusDoCiclo : [menuFiltro];
+            
+            let ingredientesAgrupados = {};
+
+            menusParaProcessar.forEach(menuId => {
+                const refeicoes = menusData[menuId] || [];
+                refeicoes.forEach(ref => {
+                    if(ref.ing) {
+                        ref.ing.forEach(ing => {
+                            const chave = ing.nome.toLowerCase();
+                            const baseId = `c_${chave.replace(/[^a-z0-9]/gi, '')}`;
+                            
+                            // Segrega o ID da visão "Todos" do ID do menu específico para os checks não conflitares
+                            const idStr = isTodos ? `todos_${baseId}` : `menu${menuFiltro}_${baseId}`;
+                            
+                            if(!ingredientesAgrupados[idStr]) {
+                                ingredientesAgrupados[idStr] = { 
+                                    id: idStr, 
+                                    nome: ing.nome, 
+                                    qtdTotalSoma: 0, 
+                                    ocorrencias: 0, 
+                                    uni: ing.uni 
+                                };
+                            }
+                            ingredientesAgrupados[idStr].qtdTotalSoma += ing.qtd;
+                            ingredientesAgrupados[idStr].ocorrencias += 1;
+                        });
+                    }
+                });
+            });
+
+            return Object.values(ingredientesAgrupados).map(ing => {
+                let qtdExibicao = "";
+                let mult = 1;
+                
+                if (isTodos) {
+                    // Inicializa forçadamente com a soma de ocorrências no ciclo (Ex: Pro Force = 12, Abobrinha = 3)
+                    if(window.multiplicadoresCompras[ing.id] === undefined) {
+                        window.multiplicadoresCompras[ing.id] = ing.ocorrencias;
+                    }
+                    mult = window.multiplicadoresCompras[ing.id];
+                    
+                    const qtdBase = ing.qtdTotalSoma / ing.ocorrencias;
+                    let qtdCalculada = qtdBase * mult;
+                    
+                    if(ing.uni === "g" && qtdCalculada >= 1000) {
+                        qtdExibicao = (qtdCalculada / 1000).toFixed(2).replace(/\.?0+$/, '') + " kg";
+                    } else if(ing.uni === "g" || ing.uni === "ml") {
+                        qtdExibicao = Math.ceil(qtdCalculada) + " " + ing.uni;
+                    } else {
+                        qtdExibicao = Number.isInteger(qtdCalculada) ? qtdCalculada + " " + ing.uni : qtdCalculada.toFixed(1) + " " + ing.uni;
+                    }
+                } else {
+                    let qtdCalculada = ing.qtdTotalSoma;
+                    if(ing.uni === "g" && qtdCalculada >= 1000) {
+                        qtdExibicao = (qtdCalculada / 1000).toFixed(2).replace(/\.?0+$/, '') + " kg";
+                    } else if(ing.uni === "g" || ing.uni === "ml") {
+                        qtdExibicao = Math.ceil(qtdCalculada) + " " + ing.uni;
+                    } else {
+                        qtdExibicao = Number.isInteger(qtdCalculada) ? qtdCalculada + " " + ing.uni : qtdCalculada.toFixed(1) + " " + ing.uni;
+                    }
+                }
+
+                return { ...ing, qtdExibicao: qtdExibicao, mult: mult, isTodos: isTodos };
+            }).sort((a, b) => a.nome.localeCompare(b.nome));
+        }
+
+        function renderizarListaCompras() {
+            const container = document.getElementById('containerListaCompras');
+            const itensRenderizar = extrairIngredientesBrutos();
+            
+            let contador = 0;
+            let html = '';
+
+            if (itensRenderizar.length > 0) {
+                html += `
+                    <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+                        <div class="p-0">
+                            ${itensRenderizar.map(item => {
+                                const isChecked = comprasEstado.includes(item.id) ? 'checked' : '';
+                                if(!isChecked) contador++;
+                                
+                                return `
+                                    <div class="flex items-center p-3 hover:bg-gray-50 border-b border-gray-50 last:border-0">
+                                        
+                                        <label class="check-item flex items-center flex-1 cursor-pointer pr-2">
+                                            <input type="checkbox" class="hidden" value="${item.id}" onchange="toggleCompra(this)" ${isChecked}>
+                                            <div class="check-box w-6 h-6 rounded-md border-2 border-gray-300 flex items-center justify-center mr-3 transition-colors shrink-0">
+                                                <i class="ph-bold ph-check text-white opacity-0 transition-opacity text-sm"></i>
+                                            </div>
+                                            <div class="content-box flex-1">
+                                                <span class="nome-item text-sm font-bold text-gray-700 transition-colors">${item.nome}</span>
+                                            </div>
+                                        </label>
+                                        
+                                        <div class="flex items-center space-x-2 shrink-0">
+                                            ${item.isTodos ? `
+                                            <div class="flex items-center bg-white border border-gray-200 rounded-lg overflow-hidden shadow-sm h-7">
+                                                <button type="button" onclick="alterarQtdItem('${item.id}', -1)" class="w-7 h-full flex items-center justify-center text-emerald-600 font-bold hover:bg-emerald-50 active:bg-emerald-100 transition-colors">-</button>
+                                                <span class="text-xs font-bold w-6 text-center text-gray-700 border-x border-gray-200 py-1">${item.mult}</span>
+                                                <button type="button" onclick="alterarQtdItem('${item.id}', 1)" class="w-7 h-full flex items-center justify-center text-emerald-600 font-bold hover:bg-emerald-50 active:bg-emerald-100 transition-colors">+</button>
+                                            </div>
+                                            ` : ''}
+                                            <span class="text-xs bg-emerald-100 text-emerald-800 px-2 py-1.5 rounded font-black min-w-[55px] text-center shadow-sm">${item.qtdExibicao}</span>
+                                        </div>
+                                    </div>`;
+                            }).join('')}
+                        </div>
+                    </div>`;
+            }
+
+            container.innerHTML = html || `<p class="text-center text-gray-500 py-6 text-sm">Nenhum item encontrado.</p>`;
+            document.getElementById('contadorFaltantes').innerText = contador;
+        }
+
+        function toggleCompra(checkbox) {
+            const itemId = checkbox.value;
+            if (checkbox.checked) {
+                if (!comprasEstado.includes(itemId)) comprasEstado.push(itemId);
+            } else {
+                comprasEstado = comprasEstado.filter(id => id !== itemId);
+            }
+            localStorage.setItem(STORAGE_KEY_COMPRAS, JSON.stringify(comprasEstado));
+            
+            document.getElementById('contadorFaltantes').innerText = 
+                document.querySelectorAll('input[type="checkbox"]:not(:checked)').length;
+        }
+
+        function limparListaCompras() {
+            if(confirm("Deseja desmarcar todos os itens desta lista?")) {
+                comprasEstado = [];
+                localStorage.setItem(STORAGE_KEY_COMPRAS, JSON.stringify(comprasEstado));
+                renderizarListaCompras();
+            }
+        }
+    </script>
+</body>
+</html>

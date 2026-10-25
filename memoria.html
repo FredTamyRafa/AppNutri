@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>NutriTrack - Memória</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="dados.js"></script>
+    <style>
+        .loader { border: 4px solid #f3f3f3; border-top: 4px solid #10b981; border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+    </style>
+</head>
+<body class="bg-gray-100 text-gray-800 font-sans antialiased pb-20">
+    <div class="max-w-md mx-auto bg-gray-50 min-h-screen relative shadow-2xl overflow-x-hidden">
+        
+        <header class="bg-emerald-600 text-white p-5 rounded-b-3xl shadow-lg relative z-10">
+            <div class="flex justify-between items-center mb-4">
+                <div>
+                    <h1 class="text-2xl font-bold">NutriTrack V8</h1>
+                    <p class="text-emerald-100 text-sm">Metabolismo Acelerado (1350 kcal)</p>
+                </div>
+                <div class="w-12 h-12 rounded-full bg-white text-emerald-600 flex items-center justify-center shadow-inner">
+                    <i class="ph-fill ph-lightning text-3xl"></i>
+                </div>
+            </div>
+            
+            <div class="bg-white/20 p-4 rounded-xl backdrop-blur-sm">
+                <div class="flex justify-between items-end mb-2">
+                    <span class="text-sm font-medium">Calorias Hoje</span>
+                    <span class="text-lg font-bold"><span id="caloriasAtuais">0</span> / 1350 kcal</span>
+                </div>
+                <div class="w-full bg-emerald-900/30 rounded-full h-3 mb-4">
+                    <div id="barraProgresso" class="bg-white h-3 rounded-full transition-all duration-500" style="width: 0%"></div>
+                </div>
+                
+                <div class="grid grid-cols-3 gap-2 text-center">
+                    <div class="bg-white/30 rounded p-1">
+                        <p class="text-[9px] uppercase font-bold text-emerald-100">Proteína</p>
+                        <p class="text-sm font-black"><span id="protAtual">0</span><span class="text-[10px] font-normal">/130g</span></p>
+                    </div>
+                    <div class="bg-white/30 rounded p-1">
+                        <p class="text-[9px] uppercase font-bold text-emerald-100">Carboidrato</p>
+                        <p class="text-sm font-black"><span id="carbAtual">0</span><span class="text-[10px] font-normal">/120g</span></p>
+                    </div>
+                    <div class="bg-white/30 rounded p-1">
+                        <p class="text-[9px] uppercase font-bold text-emerald-100">Gordura</p>
+                        <p class="text-sm font-black"><span id="gordAtual">0</span><span class="text-[10px] font-normal">/40g</span></p>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <main class="p-4">
+            <div class="bg-white p-5 rounded-2xl shadow-sm border border-emerald-100 mb-6 relative overflow-hidden">
+                <div class="absolute top-0 left-0 w-1 h-full bg-emerald-500"></div>
+                <h3 class="font-bold text-gray-800 mb-1"><i class="ph-fill ph-check-circle text-emerald-500 mr-1"></i> Seguiu o plano à risca?</h3>
+                <p class="text-xs text-gray-500 mb-3">Lance direto da dieta sem precisar fotografar.</p>
+                
+                <div class="space-y-2 mb-3">
+                    <select id="seletorRapidoCiclo" class="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 text-gray-700" onchange="atualizarSeletorRapidoMenu()">
+                        <option value="ciclo1">Ciclo 1: Adaptação</option>
+                        <option value="ciclo2" selected>Ciclo 2: Queima & Hipertrofia</option>
+                    </select>
+                    <select id="seletorRapidoMenu" class="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 text-gray-700" onchange="atualizarSeletorRapidoRefeicao()"></select>
+                    <select id="seletorRapidoRefeicao" class="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 text-gray-700"></select>
+                </div>
+                
+                <button onclick="adicionarRefeicaoDoMenu()" class="w-full bg-emerald-100 text-emerald-700 font-bold py-3 rounded-xl shadow-sm active:bg-emerald-200 transition-colors flex justify-center items-center text-sm">
+                    <i class="ph-bold ph-plus mr-2"></i> Computar Refeição Exata
+                </button>
+            </div>
+
+            <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 text-center mb-6">
+                <input type="file" accept="image/*" capture="environment" id="cameraInput" class="hidden" onchange="processarFoto(event)">
+                <label for="cameraInput" class="cursor-pointer inline-block w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mb-2 mx-auto shadow-sm active:scale-95 transition-transform">
+                    <i class="ph ph-camera text-3xl text-gray-500"></i>
+                </label>
+                <h3 class="font-bold text-gray-800 text-sm">Refeição Fora do Plano?</h3>
+            </div>
+
+            <div id="areaAnalise" class="hidden bg-white p-5 rounded-2xl shadow-lg border border-emerald-100 mb-6">
+                <img id="previewFoto" class="w-full h-48 object-cover rounded-xl mb-4" src="">
+                <div id="loaderAnalise" class="flex flex-col items-center justify-center py-4">
+                    <div class="loader mb-3"></div>
+                    <p class="text-emerald-600 font-medium">Extraindo Dados...</p>
+                </div>
+                <div id="formEstimativa" class="hidden">
+                    <h3 class="font-bold text-gray-800 mb-3 flex items-center"><i class="ph-fill ph-floppy-disk text-emerald-500 mr-2"></i> Gravar Consumo Avulso</h3>
+                    <div class="space-y-3">
+                        <input type="text" id="inputNomeRefeicao" class="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl mt-1 text-sm" placeholder="Nome do Prato">
+                        <div class="grid grid-cols-2 gap-3">
+                            <input type="number" id="inputCalorias" class="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl mt-1 font-bold text-emerald-600" placeholder="Kcal">
+                            <input type="number" id="inputProt" class="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl mt-1 font-bold text-blue-600" placeholder="Proteína (g)" value="0">
+                        </div>
+                        <div class="flex space-x-2 mt-4">
+                            <button onclick="salvarRefeicaoAvulsa(false)" class="w-1/2 bg-emerald-600 text-white font-bold py-3 rounded-xl shadow-sm flex justify-center items-center text-sm">Gravar na Memória</button>
+                            <button onclick="salvarRefeicaoAvulsa(true)" class="w-1/2 bg-blue-600 text-white font-bold py-3 rounded-xl shadow-md flex justify-center items-center text-sm"><i class="ph-bold ph-share-network mr-2 text-lg"></i> Enviar</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-white p-4 rounded-2xl shadow-sm border border-gray-100 mb-6">
+                <h3 class="font-bold text-gray-800 mb-2 text-sm">Histórico de Calorias (7 dias)</h3>
+                <canvas id="graficoCalorias" height="180"></canvas>
+            </div>
+
+            <div>
+                <div class="flex justify-between items-center mb-3">
+                    <h3 class="font-bold text-gray-800">Consumo de Hoje</h3>
+                    <button onclick="limparDiarioHoje()" class="text-xs text-red-500 font-medium px-2 py-1 bg-red-50 rounded-lg">Limpar Todo o Dia</button>
+                </div>
+                <div id="listaDiario" class="space-y-3"></div>
+            </div>
+        </main>
+
+        <nav class="fixed bottom-0 w-full max-w-md bg-white/90 backdrop-blur-md border-t border-gray-200 flex justify-between items-center pb-safe pt-2 pb-2 px-1 z-50">
+            <a href="index.html" class="flex flex-col items-center p-2 text-gray-400 hover:text-emerald-600 w-1/4 transition-colors">
+                <i class="ph ph-fork-knife text-2xl mb-1"></i><span class="text-[10px] font-semibold">Cardápios</span>
+            </a>
+            <a href="memoria.html" class="flex flex-col items-center p-2 text-emerald-600 w-1/4 transition-colors">
+                <i class="ph-fill ph-notebook text-2xl mb-1"></i><span class="text-[10px] font-semibold">Memória</span>
+            </a>
+            <a href="compras.html" class="flex flex-col items-center p-2 text-gray-400 hover:text-emerald-600 w-1/4 transition-colors">
+                <i class="ph ph-shopping-cart text-2xl mb-1"></i><span class="text-[10px] font-semibold">Compras</span>
+            </a>
+            <a href="planilha.html" class="flex flex-col items-center p-2 text-gray-400 hover:text-emerald-600 w-1/4 transition-colors">
+                <i class="ph ph-chart-line-up text-2xl mb-1"></i><span class="text-[10px] font-semibold">Planilha</span>
+            </a>
+        </nav>
+    </div>
+
+    <script>
+        let currentFotoDataUrl = null;
+        let chartInstance = null;
+
+        window.onload = () => {
+            atualizarProgressoDiarioGlobais();
+            renderizarListaDiarioLocal();
+            atualizarSeletorRapidoMenu();
+            renderizarGrafico();
+        };
+
+        function atualizarSeletorRapidoMenu() {
+            const cicloId = document.getElementById('seletorRapidoCiclo').value;
+            const seletorMenu = document.getElementById('seletorRapidoMenu');
+            
+            seletorMenu.innerHTML = ciclosData[cicloId].map(menu => 
+                `<option value="${menu.value}">${menu.text}</option>`
+            ).join('');
+            
+            atualizarSeletorRapidoRefeicao();
+        }
+
+        function atualizarSeletorRapidoRefeicao() {
+            const menuId = document.getElementById('seletorRapidoMenu').value;
+            const seletorRefeicao = document.getElementById('seletorRapidoRefeicao');
+            const refeicoes = menusData[menuId] || [];
+            
+            seletorRefeicao.innerHTML = refeicoes.map(ref => 
+                `<option value="${ref.id}">${ref.title} - ${ref.nutri}</option>`
+            ).join('');
+        }
+
+        function adicionarRefeicaoDoMenu() {
+            const menuId = document.getElementById('seletorRapidoMenu').value;
+            const refId = document.getElementById('seletorRapidoRefeicao').value;
+            const refeicao = menusData[menuId].find(r => r.id === refId);
+            
+            const p = parseInt(refeicao.nutri.match(/Prot:\s*(\d+)g/)?.[1] || 0);
+            const c = parseInt(refeicao.nutri.match(/Carb:\s*(\d+)g/)?.[1] || 0);
+            const g = parseInt(refeicao.nutri.match(/Gord:\s*(\d+)g/)?.[1] || 0);
+            const kcal = (p * 4) + (c * 4) + (g * 9);
+            
+            gravarNoLog(`Menu ${menuId} - ${refeicao.title}`, kcal, p, c, g);
+            alert(`Refeição computada: ${kcal} kcal!`);
+        }
+
+        function processarFoto(event) {
+            const file = event.target.files[0];
+            if(!file) return;
+            document.getElementById('areaAnalise').classList.remove('hidden');
+            document.getElementById('loaderAnalise').classList.remove('hidden');
+            document.getElementById('formEstimativa').classList.add('hidden');
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                currentFotoDataUrl = e.target.result;
+                document.getElementById('previewFoto').src = currentFotoDataUrl;
+            }
+            reader.readAsDataURL(file);
+            setTimeout(() => {
+                document.getElementById('loaderAnalise').classList.add('hidden');
+                document.getElementById('formEstimativa').classList.remove('hidden');
+                document.getElementById('inputCalorias').value = Math.floor(Math.random() * (350 - 150 + 1)) + 150;
+            }, 1000);
+        }
+
+        async function salvarRefeicaoAvulsa(compartilhar) {
+            const nome = document.getElementById('inputNomeRefeicao').value || "Avulsa";
+            const kcal = parseInt(document.getElementById('inputCalorias').value) || 0;
+            const prot = parseInt(document.getElementById('inputProt').value) || 0;
+            if(kcal <= 0) { alert("Insira uma caloria válida."); return; }
+            
+            gravarNoLog(nome, kcal, prot, 0, 0);
+
+            if(compartilhar && currentFotoDataUrl) {
+                const dataHoje = new Date().toISOString().split('T')[0];
+                const logsHoje = diarioLog.filter(log => log.data === dataHoje);
+                let kcalTotal = 0; logsHoje.forEach(l => { kcalTotal += l.calorias || 0; });
+                
+                const texto = `🏋️ *NutriTrack V8*\nConsumi: *${nome}* (${kcal} Kcal)\nTotal Hoje: ${kcalTotal} Kcal.`;
+                
+                try {
+                    if (navigator.share) {
+                        const res = await fetch(currentFotoDataUrl);
+                        const blob = await res.blob();
+                        const file = new File([blob], "refeicao.jpg", { type: "image/jpeg" });
+                        await navigator.share({ title: 'Meu Prato - NutriTrack', text: texto, files: [file] });
+                    } else {
+                        alert("Compartilhamento nativo não suportado neste navegador.");
+                    }
+                } catch(e) {
+                    console.error("Erro ao compartilhar", e);
+                }
+            } else if (!compartilhar) {
+                alert("Refeição gravada na memória interna!");
+            }
+
+            document.getElementById('areaAnalise').classList.add('hidden');
+            document.getElementById('cameraInput').value = "";
+            currentFotoDataUrl = null;
+        }
+
+        function gravarNoLog(nome, kcal, prot, carb, gord) {
+            const log = { id: Date.now(), data: new Date().toISOString().split('T')[0], hora: new Date().toTimeString().split(' ')[0].substring(0,5), nome: nome, calorias: kcal, prot: prot, carb: carb, gord: gord };
+            diarioLog.push(log);
+            localStorage.setItem(STORAGE_KEY_DIARIO, JSON.stringify(diarioLog));
+            atualizarProgressoDiarioGlobais();
+            renderizarListaDiarioLocal();
+            renderizarGrafico();
+        }
+
+        function excluirRefeicao(id) {
+            if(confirm("Deseja realmente apagar esta refeição?")) {
+                diarioLog = diarioLog.filter(log => log.id !== id);
+                localStorage.setItem(STORAGE_KEY_DIARIO, JSON.stringify(diarioLog));
+                atualizarProgressoDiarioGlobais();
+                renderizarListaDiarioLocal();
+                renderizarGrafico();
+            }
+        }
+
+        function renderizarListaDiarioLocal() {
+            const dataHoje = new Date().toISOString().split('T')[0];
+            const logsHoje = diarioLog.filter(log => log.data === dataHoje);
+            document.getElementById('listaDiario').innerHTML = logsHoje.reverse().map(log => `
+                <div class="bg-white p-3 rounded-xl shadow-sm border border-gray-100 flex justify-between items-center">
+                    <div class="flex items-center">
+                        <div class="bg-emerald-100 text-emerald-700 w-10 h-10 rounded-lg flex items-center justify-center font-bold mr-3 text-xs shrink-0">${log.hora}</div>
+                        <div>
+                            <h4 class="font-bold text-gray-800 text-sm leading-tight">${log.nome}</h4>
+                            <p class="text-[10px] text-gray-400 mt-1">P:${log.prot}g | C:${log.carb}g | G:${log.gord}g</p>
+                        </div>
+                    </div>
+                    <div class="flex items-center space-x-3">
+                        <div class="text-right">
+                            <span class="font-black text-emerald-600">${log.calorias}</span>
+                            <span class="text-[10px] text-gray-500 block uppercase">Kcal</span>
+                        </div>
+                        <button onclick="excluirRefeicao(${log.id})" class="p-2 text-red-400 hover:text-red-600 bg-red-50 rounded-lg active:scale-95 transition-transform" title="Excluir refeição">
+                            <i class="ph-bold ph-trash"></i>
+                        </button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function limparDiarioHoje() {
+            if(confirm("Deseja APAGAR TODAS as calorias salvas hoje?")) {
+                const dataHoje = new Date().toISOString().split('T')[0];
+                diarioLog = diarioLog.filter(log => log.data !== dataHoje);
+                localStorage.setItem(STORAGE_KEY_DIARIO, JSON.stringify(diarioLog));
+                atualizarProgressoDiarioGlobais();
+                renderizarListaDiarioLocal();
+                renderizarGrafico();
+            }
+        }
+
+        function renderizarGrafico() {
+            const ctx = document.getElementById('graficoCalorias').getContext('2d');
+            const labels = []; const dataSets = [];
+            for(let i=6; i>=0; i--) {
+                const d = new Date(); d.setDate(d.getDate() - i);
+                const dateStr = d.toISOString().split('T')[0];
+                labels.push(d.toLocaleDateString('pt-BR', {day: '2-digit', month: '2-digit'}));
+                dataSets.push(diarioLog.filter(l => l.data === dateStr).reduce((acc, curr) => acc + curr.calorias, 0));
+            }
+            if(chartInstance) chartInstance.destroy();
+            chartInstance = new Chart(ctx, { type: 'bar', data: { labels: labels, datasets: [{ label: 'Kcal Consumidas', data: dataSets, backgroundColor: '#10b981', borderRadius: 4 }] }, options: { responsive: true, scales: { y: { beginAtZero: true, suggestedMax: 1500 } }, plugins: { legend: { display: false } } } });
+        }
+    </script>
+</body>
+</html>

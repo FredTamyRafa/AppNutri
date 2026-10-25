@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>NutriTrack - Planilha</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    <script src="dados.js"></script>
+</head>
+<body class="bg-gray-100 text-gray-800 font-sans antialiased pb-20">
+    <div class="max-w-md mx-auto bg-gray-50 min-h-screen relative shadow-2xl overflow-x-hidden">
+        
+        <header class="bg-emerald-600 text-white p-5 rounded-b-3xl shadow-lg relative z-10">
+            <div class="flex justify-between items-center mb-4">
+                <div>
+                    <h1 class="text-2xl font-bold">NutriTrack V8</h1>
+                    <p class="text-emerald-100 text-sm">Metabolismo Acelerado (1350 kcal)</p>
+                </div>
+            </div>
+            
+            <div class="bg-white/20 p-4 rounded-xl backdrop-blur-sm">
+                <div class="flex justify-between items-end mb-2">
+                    <span class="text-sm font-medium">Calorias Hoje</span>
+                    <span class="text-lg font-bold"><span id="caloriasAtuais">0</span> / 1350 kcal</span>
+                </div>
+                <div class="w-full bg-emerald-900/30 rounded-full h-3 mb-4">
+                    <div id="barraProgresso" class="bg-white h-3 rounded-full transition-all duration-500" style="width: 0%"></div>
+                </div>
+            </div>
+        </header>
+
+        <main class="p-4">
+            <h2 class="text-xl font-bold text-gray-800 mb-2">Relatórios</h2>
+            <div class="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 text-center">
+                <div class="w-16 h-16 bg-emerald-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <i class="ph ph-file-csv text-3xl text-emerald-600"></i>
+                </div>
+                <h3 class="font-bold text-gray-800 text-lg mb-2">Exportar Histórico (.CSV)</h3>
+                <button onclick="exportarCSV()" class="w-full bg-emerald-600 text-white font-bold py-3 rounded-xl shadow-md mt-2">Baixar Planilha</button>
+            </div>
+        </main>
+
+        <nav class="fixed bottom-0 w-full max-w-md bg-white/90 backdrop-blur-md border-t border-gray-200 flex justify-between items-center pb-safe pt-2 pb-2 px-1 z-50">
+            <a href="index.html" class="flex flex-col items-center p-2 text-gray-400 hover:text-emerald-600 w-1/4 transition-colors">
+                <i class="ph ph-fork-knife text-2xl mb-1"></i><span class="text-[10px] font-semibold">Cardápios</span>
+            </a>
+            <a href="memoria.html" class="flex flex-col items-center p-2 text-gray-400 hover:text-emerald-600 w-1/4 transition-colors">
+                <i class="ph ph-notebook text-2xl mb-1"></i><span class="text-[10px] font-semibold">Memória</span>
+            </a>
+            <a href="compras.html" class="flex flex-col items-center p-2 text-gray-400 hover:text-emerald-600 w-1/4 transition-colors">
+                <i class="ph ph-shopping-cart text-2xl mb-1"></i><span class="text-[10px] font-semibold">Compras</span>
+            </a>
+            <a href="planilha.html" class="flex flex-col items-center p-2 text-emerald-600 w-1/4 transition-colors">
+                <i class="ph-fill ph-chart-line-up text-2xl mb-1"></i><span class="text-[10px] font-semibold">Planilha</span>
+            </a>
+        </nav>
+    </div>
+
+    <script>
+        window.onload = () => {
+            atualizarProgressoDiarioGlobais();
+        };
+
+        function exportarCSV() {
+            let csvContent = "Data,Hora,Refeicao,Calorias(Kcal),Prot(g),Carb(g),Gord(g)\n" + 
+                diarioLog.map(row => `${row.data},${row.hora},${row.nome.replace(/,/g, " ")},${row.calorias},${row.prot||0},${row.carb||0},${row.gord||0}`).join("\n");
+            const link = document.createElement("a");
+            link.href = URL.createObjectURL(new Blob([csvContent], { type: 'text/csv;charset=utf-8;' }));
+            link.download = `NutriTrack_Evolucao_${new Date().toISOString().split('T')[0]}.csv`;
+            link.click();
+        }
+    </script>
+</body>
+</html>
